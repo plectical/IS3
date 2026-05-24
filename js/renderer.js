@@ -1,55 +1,58 @@
 /**
  * renderer.js — Canvas rendering engine.
- * Side-scrolling world: player walks right through the environment,
- * encounters enemies, fights, then keeps walking.
- * Floor scrolls, trees/rocks pass by, enemies appear ahead.
+ * Dungeon corridor style: wall tiles frame the top, floor tiles scroll along the bottom,
+ * decorations line the walls. Player walks right through corridors, encounters enemies.
+ * Inspired by Idle Sword 2's dungeon crawl look.
  */
 
 var Renderer = (function () {
 
   var canvas, ctx;
-  var W, H;                   // canvas pixel dimensions (CSS)
-  var scale = 1;              // device pixel ratio
+  var W, H;                   // canvas size in CSS pixels
+
+  // --- LAYOUT ZONES ---
+  // The screen is divided into vertical bands:
+  //   [ceiling/wall] [upper decorations] [walkway/action area] [floor tiles] [lower decorations]
+  var WALL_TOP = 0;           // where the top wall starts (0)
+  var WALL_H = 0;             // height of the top wall band
+  var FLOOR_Y = 0;            // Y where the walkable floor starts
+  var FLOOR_H = 0;            // height of the floor tile area
+  var ACTION_Y = 0;           // Y center of the action area (where sprites stand)
 
   // --- WORLD SCROLL ---
-  // The "camera" tracks a world X position. Everything scrolls left relative to it.
-  var worldX = 0;             // how far the player has traveled (in world pixels)
-  var scrollSpeed = 0;        // current scroll speed (pixels per frame). 0 = stopped (fighting)
-  var WALK_SPEED = 1.5;       // normal walking speed
-  var state = "walking";      // "walking" | "approaching" | "fighting" | "victory" | "dead"
+  var worldX = 0;             // how far player has traveled
+  var scrollSpeed = 0;
+  var WALK_SPEED = 1.8;
+  var state = "walking";      // walking | approaching | fighting | victory | dead
 
   // --- PLAYER ---
-  var playerScreenX = 0;      // player's X position on screen (fixed ~30% from left)
-  var playerScreenY = 0;      // player's Y position on screen
-  var playerBob = 0;          // bob animation counter for walk cycle
-  var playerShake = 0;        // shake on hit
-  var playerFlash = 0;        // red flash on hit
+  var playerScreenX = 0;
+  var playerBob = 0;
+  var playerShake = 0;
+  var playerFlash = 0;
 
   // --- ENEMY ---
-  var enemyWorldX = 0;        // enemy's position in world coords
-  var enemyScreenY = 0;       // enemy Y on screen
+  var enemyWorldX = 0;
   var enemyShake = 0;
   var enemyFlash = 0;
-  var enemyAlpha = 1;         // fade out on death
+  var enemyAlpha = 1;
   var enemyVisible = false;
 
-  // --- ENVIRONMENT OBJECTS ---
-  // Trees, rocks, etc. that scroll past in the background/foreground
-  var envObjects = [];         // { key, worldX, y, scale }
-  var lastEnvSpawn = 0;        // world X of last spawned env object
-
-  // --- FLOOR TILES ---
-  var TILE_SIZE = 64;          // drawn size of each floor tile
-  var floorY = 0;              // Y position where the "ground" is
-
-  // --- FLOATERS (damage numbers) ---
+  // --- FLOATERS ---
   var floaters = [];
 
   // --- BOSS ---
   var bossEntrance = 0;
 
+  // --- DECORATION OBJECTS ---
+  // Wall decorations that scroll with the world (columns, sconces, stalagmites, etc.)
+  var topDecos = [];          // decorations along the top wall
+  var botDecos = [];          // decorations along the bottom
+  var lastTopDecoX = 0;
+  var lastBotDecoX = 0;
+
   /**
-   * Initialize the renderer.
+   * Initialize — grab canvas, size everything, start loop.
    */
   function init() {
     canvas = document.getElementById("gameCanvas");
@@ -58,77 +61,77 @@ var Renderer = (function () {
     _resize();
     window.addEventListener("resize", _resize);
 
-    // Seed some initial environment objects behind and ahead of the player
-    _seedEnvironment();
+    // Seed decorations
+    _seedDecorations();
 
-    // Start the render loop
     requestAnimationFrame(_loop);
   }
 
   /**
-   * Resize canvas to fill the viewport.
+   * Resize canvas and recalculate layout zones.
    */
   function _resize() {
-    scale = window.devicePixelRatio || 1;
+    var dpr = window.devicePixelRatio || 1;
     W = window.innerWidth;
     H = window.innerHeight;
-    canvas.width = W * scale;
-    canvas.height = H * scale;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
     canvas.style.width = W + "px";
     canvas.style.height = H + "px";
-    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    // Ground line sits at about 65% down the screen
-    floorY = H * 0.62;
+    // Layout: top 25% is wall, middle 40% is action area, bottom 35% is floor
+    WALL_H = Math.floor(H * 0.22);
+    FLOOR_Y = Math.floor(H * 0.60);
+    FLOOR_H = H - FLOOR_Y;
+    ACTION_Y = FLOOR_Y - 10; // sprites stand right on the floor line
 
-    // Player always at ~28% from left, standing on the ground
-    playerScreenX = W * 0.28;
-    playerScreenY = floorY - 96 * 2.5; // sprite height * scale, feet on ground
-
-    // Enemy Y matches player (same ground level)
-    enemyScreenY = playerScreenY;
+    playerScreenX = W * 0.25;
   }
 
   /**
-   * Seed initial environment objects so the world isn't empty at start.
+   * Seed initial decorations along the corridor.
    */
-  function _seedEnvironment() {
-    // Place objects from behind the player to ahead
-    for (var x = -200; x < 1200; x += 80 + Math.random() * 160) {
-      _spawnEnvObject(x);
+  function _seedDecorations() {
+    for (var x = -200; x < W + 400; x += 120 + Math.random() * 100) {
+      _spawnTopDeco(x);
     }
-    lastEnvSpawn = 1200;
+    lastTopDecoX = W + 400;
+
+    for (var x2 = -200; x2 < W + 400; x2 += 150 + Math.random() * 120) {
+      _spawnBotDeco(x2);
+    }
+    lastBotDecoX = W + 400;
   }
 
   /**
-   * Spawn a random environment object (tree, rock, grass) at a world X position.
+   * Spawn a top-wall decoration at a world X.
    */
-  function _spawnEnvObject(wx) {
+  function _spawnTopDeco(wx) {
     var ps = Player.getState();
     var zone = GameData.zones[ps.currentZone];
-    var obstacles = zone.obstacles;
+    if (!zone.wallsTop || zone.wallsTop.length === 0) return;
 
-    // If no obstacles defined for this zone, use generic placement markers
-    if (!obstacles || obstacles.length === 0) return;
-
-    var key = obstacles[Math.floor(Math.random() * obstacles.length)];
-
-    // Random Y offset: some objects in background (higher), some foreground (lower)
-    var layer = Math.random(); // 0-1, lower = further back
-    var yOffset = -40 + layer * 80; // spread above and below ground line
-
-    envObjects.push({
-      key: key,
-      worldX: wx,
-      y: floorY - 60 + yOffset, // positioned near ground
-      drawScale: 1.2 + layer * 0.8, // further back = smaller, foreground = bigger
-      layer: layer // for draw order
-    });
+    var key = zone.wallsTop[Math.floor(Math.random() * zone.wallsTop.length)];
+    topDecos.push({ key: key, worldX: wx });
   }
 
   /**
-   * Main render loop.
+   * Spawn a bottom-floor decoration at a world X.
    */
+  function _spawnBotDeco(wx) {
+    var ps = Player.getState();
+    var zone = GameData.zones[ps.currentZone];
+    if (!zone.wallsBottom || zone.wallsBottom.length === 0) return;
+
+    var key = zone.wallsBottom[Math.floor(Math.random() * zone.wallsBottom.length)];
+    botDecos.push({ key: key, worldX: wx });
+  }
+
+  // ==========================================
+  //  MAIN LOOP
+  // ==========================================
+
   function _loop() {
     _update();
     _draw();
@@ -136,150 +139,175 @@ var Renderer = (function () {
   }
 
   /**
-   * Update all animation state each frame.
+   * Update all state each frame.
    */
   function _update() {
-    // --- SCROLL THE WORLD ---
+    // --- SCROLL ---
     if (state === "walking") {
-      scrollSpeed += (WALK_SPEED - scrollSpeed) * 0.05; // ease into walk speed
+      scrollSpeed += (WALK_SPEED - scrollSpeed) * 0.06;
       worldX += scrollSpeed;
-      playerBob += 0.08; // walk bob cycle
+      playerBob += 0.1;
     } else if (state === "approaching") {
-      // Slow down as we approach an enemy
-      scrollSpeed *= 0.95;
+      scrollSpeed *= 0.96;
       worldX += scrollSpeed;
-      playerBob += 0.06;
+      playerBob += 0.07;
 
-      // Check if player reached the enemy (enemy should be ~70% screen width away)
-      var enemyOnScreen = enemyWorldX - worldX;
-      if (enemyOnScreen <= W * 0.65) {
+      // Stop when enemy is at about 68% screen width
+      var enemyScreen = enemyWorldX - worldX;
+      if (enemyScreen <= W * 0.62) {
         scrollSpeed = 0;
         state = "fighting";
       }
-    } else if (state === "victory") {
-      // Brief pause, then resume walking
-      // (handled by timeout in notifyEnemyDeath)
     } else {
-      scrollSpeed *= 0.9; // decelerate to stop
-      playerBob += 0.02; // subtle idle bob
+      scrollSpeed *= 0.9;
+      playerBob += 0.025; // idle breathing
     }
 
-    // --- SPAWN NEW ENV OBJECTS as world scrolls ---
-    // Spawn objects ahead of camera
-    var cameraRight = worldX + W + 200;
-    while (lastEnvSpawn < cameraRight) {
-      lastEnvSpawn += 60 + Math.random() * 180;
-      if (Math.random() < 0.6) { // 60% chance to place something
-        _spawnEnvObject(lastEnvSpawn);
-      }
+    // --- SPAWN DECORATIONS ahead as we scroll ---
+    var ahead = worldX + W + 300;
+    while (lastTopDecoX < ahead) {
+      lastTopDecoX += 100 + Math.random() * 140;
+      _spawnTopDeco(lastTopDecoX);
+    }
+    while (lastBotDecoX < ahead) {
+      lastBotDecoX += 130 + Math.random() * 150;
+      _spawnBotDeco(lastBotDecoX);
     }
 
-    // Remove objects that scrolled way off-screen left
-    var cameraLeft = worldX - 300;
-    for (var i = envObjects.length - 1; i >= 0; i--) {
-      if (envObjects[i].worldX < cameraLeft) {
-        envObjects.splice(i, 1);
-      }
-    }
+    // Cull decorations behind camera
+    var behind = worldX - 300;
+    _cullArray(topDecos, behind);
+    _cullArray(botDecos, behind);
 
     // --- DECAY ANIMATIONS ---
-    playerShake *= 0.85;
-    enemyShake *= 0.85;
+    playerShake *= 0.82;
+    enemyShake *= 0.82;
     if (Math.abs(playerShake) < 0.5) playerShake = 0;
     if (Math.abs(enemyShake) < 0.5) enemyShake = 0;
-    if (playerFlash > 0) playerFlash -= 0.05;
-    if (enemyFlash > 0) enemyFlash -= 0.05;
-    if (bossEntrance > 0) bossEntrance -= 0.015;
+    if (playerFlash > 0) playerFlash -= 0.04;
+    if (enemyFlash > 0) enemyFlash -= 0.04;
+    if (bossEntrance > 0) bossEntrance -= 0.012;
 
-    // --- UPDATE FLOATERS ---
-    for (var j = floaters.length - 1; j >= 0; j--) {
-      var f = floaters[j];
+    // --- FLOATERS ---
+    for (var i = floaters.length - 1; i >= 0; i--) {
+      var f = floaters[i];
       f.y += f.vy;
       f.vy -= 0.03;
       f.alpha -= 0.012;
-      // Floaters scroll with the world if they have a worldX
-      if (f.worldX !== undefined) {
-        f.screenX = f.worldX - worldX;
-      }
-      if (f.alpha <= 0) floaters.splice(j, 1);
+      if (f.worldX !== undefined) f.screenX = f.worldX - worldX;
+      if (f.alpha <= 0) floaters.splice(i, 1);
     }
   }
 
   /**
-   * Draw everything to the canvas.
+   * Remove objects from array whose worldX is behind the camera.
    */
+  function _cullArray(arr, behind) {
+    for (var i = arr.length - 1; i >= 0; i--) {
+      if (arr[i].worldX < behind) arr.splice(i, 1);
+    }
+  }
+
+  // ==========================================
+  //  DRAW
+  // ==========================================
+
   function _draw() {
     ctx.clearRect(0, 0, W, H);
 
-    _drawSky();
-    _drawFloor();
-    _drawEnvironmentBack();
+    _drawWallBackground();    // dark wall/ceiling area
+    _drawTopDecorations();    // wall decorations (trees, columns, stalagmites)
+    _drawFloor();             // scrolling floor tiles
+    _drawBotDecorations();    // floor-level decorations (bones, gravestones, etc.)
     _drawPlayer();
     _drawEnemy();
-    _drawEnvironmentFront();
     _drawFloaters();
 
     if (bossEntrance > 0) _drawBossEntrance();
   }
 
   /**
-   * Draw a gradient sky background that changes per zone.
+   * Draw the dark wall/ceiling background at the top.
+   * Uses a gradient matching the zone's sky colors.
    */
-  function _drawSky() {
+  function _drawWallBackground() {
     var ps = Player.getState();
     var zone = GameData.zones[ps.currentZone];
+    var colors = zone.skyColor || ["#111", "#222"];
 
-    // Sky colors per zone
-    var skyColors = {
-      forest:   ["#1a2a1a", "#0d1f0d"],
-      cavern:   ["#1a1a2a", "#0d0d1f"],
-      castle:   ["#2a2a2a", "#111111"],
-      cemetery: ["#1f1a2a", "#0f0d1a"],
-      hell:     ["#2a1010", "#1a0505"],
-      cosmic:   ["#0a0a2a", "#050520"]
-    };
-
-    var colors = skyColors[zone.id] || ["#1a1a2a", "#0d0d1f"];
-    var grad = ctx.createLinearGradient(0, 0, 0, floorY);
+    // Top wall area — dark gradient
+    var grad = ctx.createLinearGradient(0, 0, 0, FLOOR_Y);
     grad.addColorStop(0, colors[0]);
+    grad.addColorStop(0.7, colors[1]);
     grad.addColorStop(1, colors[1]);
     ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, floorY);
+    ctx.fillRect(0, 0, W, FLOOR_Y);
+
+    // Draw a "wall edge" line where the wall meets the floor
+    ctx.fillStyle = "rgba(255,255,255,0.06)";
+    ctx.fillRect(0, FLOOR_Y - 2, W, 2);
   }
 
   /**
-   * Draw the scrolling tile floor.
-   * Tiles move left as the player walks right.
+   * Draw top wall decorations — these scroll with the world.
+   * Positioned along the lower edge of the wall, framing the corridor.
+   */
+  function _drawTopDecorations() {
+    for (var i = 0; i < topDecos.length; i++) {
+      var d = topDecos[i];
+      var screenX = d.worldX - worldX;
+      if (screenX < -120 || screenX > W + 120) continue;
+
+      var img = AssetLoader.get(d.key);
+      if (!img || !img.complete) continue;
+
+      // Scale to fit the wall area. Draw them anchored to the bottom of the wall zone.
+      var s = 1.5;
+      var dw = img.width * s;
+      var dh = img.height * s;
+      // Place them so their bottom aligns with the wall/floor boundary
+      var dy = FLOOR_Y - dh;
+
+      ctx.globalAlpha = 0.75;
+      ctx.drawImage(img, screenX - dw / 2, dy, dw, dh);
+      ctx.globalAlpha = 1;
+    }
+
+    // Dark gradient overlay at the bottom of the wall to create depth
+    var depthGrad = ctx.createLinearGradient(0, FLOOR_Y - 40, 0, FLOOR_Y);
+    depthGrad.addColorStop(0, "rgba(0,0,0,0)");
+    depthGrad.addColorStop(1, "rgba(0,0,0,0.3)");
+    ctx.fillStyle = depthGrad;
+    ctx.fillRect(0, FLOOR_Y - 40, W, 40);
+  }
+
+  /**
+   * Draw the scrolling floor tiles.
    */
   function _drawFloor() {
     var ps = Player.getState();
     var zone = GameData.zones[ps.currentZone];
     var tiles = zone.tiles;
+
     if (!tiles || tiles.length === 0) {
-      // Solid floor fallback
-      ctx.fillStyle = "#222";
-      ctx.fillRect(0, floorY, W, H - floorY);
+      ctx.fillStyle = "#1a1a1a";
+      ctx.fillRect(0, FLOOR_Y, W, FLOOR_H);
       return;
     }
 
-    var ts = TILE_SIZE;
-    // How many tiles fill the floor area
-    var floorH = H - floorY;
+    var ts = 64; // tile size
     var cols = Math.ceil(W / ts) + 2;
-    var rows = Math.ceil(floorH / ts) + 1;
-
-    // Offset based on world scroll (tiles slide left)
+    var rows = Math.ceil(FLOOR_H / ts) + 1;
     var offsetX = -(worldX % ts);
 
     for (var row = 0; row < rows; row++) {
       for (var col = 0; col < cols; col++) {
-        // Pick tile deterministically so it doesn't flicker
         var worldCol = Math.floor(worldX / ts) + col;
         var tileIdx = ((row * 7 + worldCol * 13) % tiles.length + tiles.length) % tiles.length;
         var tileImg = AssetLoader.get(tiles[tileIdx]);
 
         var dx = col * ts + offsetX;
-        var dy = floorY + row * ts;
+        var dy = FLOOR_Y + row * ts;
 
         if (tileImg && tileImg.complete) {
           ctx.drawImage(tileImg, dx, dy, ts, ts);
@@ -290,91 +318,75 @@ var Renderer = (function () {
       }
     }
 
-    // Slight darkening gradient at the ground line for depth
-    var edgeGrad = ctx.createLinearGradient(0, floorY, 0, floorY + 20);
-    edgeGrad.addColorStop(0, "rgba(0,0,0,0.4)");
-    edgeGrad.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = edgeGrad;
-    ctx.fillRect(0, floorY, W, 20);
+    // Shadow gradient at top of floor for depth
+    var floorGrad = ctx.createLinearGradient(0, FLOOR_Y, 0, FLOOR_Y + 25);
+    floorGrad.addColorStop(0, "rgba(0,0,0,0.35)");
+    floorGrad.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = floorGrad;
+    ctx.fillRect(0, FLOOR_Y, W, 25);
   }
 
   /**
-   * Draw environment objects that are BEHIND the player (background layer).
+   * Draw bottom/floor-level decorations.
+   * These sit on the floor and scroll with the world — columns, bone piles, etc.
    */
-  function _drawEnvironmentBack() {
-    for (var i = 0; i < envObjects.length; i++) {
-      var obj = envObjects[i];
-      if (obj.layer >= 0.5) continue; // foreground objects drawn later
+  function _drawBotDecorations() {
+    for (var i = 0; i < botDecos.length; i++) {
+      var d = botDecos[i];
+      var screenX = d.worldX - worldX;
+      if (screenX < -120 || screenX > W + 120) continue;
 
-      var screenX = obj.worldX - worldX;
-      if (screenX < -100 || screenX > W + 100) continue;
-
-      var img = AssetLoader.get(obj.key);
+      var img = AssetLoader.get(d.key);
       if (!img || !img.complete) continue;
 
-      var s = obj.drawScale;
-      ctx.globalAlpha = 0.5 + obj.layer * 0.3; // background objects are dimmer
-      ctx.drawImage(img, screenX, obj.y, img.width * s, img.height * s);
+      var s = 1.3;
+      var dw = img.width * s;
+      var dh = img.height * s;
+      // Sit on the floor, slightly above the floor line
+      var dy = FLOOR_Y - dh * 0.4;
+
+      ctx.globalAlpha = 0.5;
+      ctx.drawImage(img, screenX - dw / 2, dy, dw, dh);
       ctx.globalAlpha = 1;
     }
   }
 
   /**
-   * Draw environment objects in the FOREGROUND (in front of characters).
-   */
-  function _drawEnvironmentFront() {
-    for (var i = 0; i < envObjects.length; i++) {
-      var obj = envObjects[i];
-      if (obj.layer < 0.5) continue; // already drawn in back layer
-
-      var screenX = obj.worldX - worldX;
-      if (screenX < -100 || screenX > W + 100) continue;
-
-      var img = AssetLoader.get(obj.key);
-      if (!img || !img.complete) continue;
-
-      var s = obj.drawScale;
-      ctx.globalAlpha = 0.7;
-      ctx.drawImage(img, screenX, obj.y, img.width * s, img.height * s);
-      ctx.globalAlpha = 1;
-    }
-  }
-
-  /**
-   * Draw the player hero sprite — walks with a bob, shakes when hit.
+   * Draw the player sprite walking along the corridor.
    */
   function _drawPlayer() {
     var spriteKey = Player.spriteKey();
     var img = AssetLoader.get(spriteKey);
     if (!img || !img.complete) return;
 
-    var drawScale = 2.5;
+    var drawScale = 2.8;
     var sw = 64 * drawScale;
     var sh = 96 * drawScale;
 
-    // Walking bob: slight up/down bounce
+    // Walk bob animation
     var bob = 0;
     if (state === "walking" || state === "approaching") {
-      bob = Math.sin(playerBob * 4) * 4; // 4px bounce
+      bob = Math.sin(playerBob * 5) * 5;
     } else {
-      bob = Math.sin(playerBob * 2) * 1.5; // subtle idle bob
+      bob = Math.sin(playerBob * 2) * 2;
     }
 
+    // Player's feet sit on the floor line
     var dx = playerScreenX - sw / 2 + playerShake;
-    var dy = playerScreenY + bob;
+    var dy = ACTION_Y - sh + bob;
 
     ctx.save();
 
-    // Draw shadow under player
-    ctx.fillStyle = "rgba(0,0,0,0.3)";
+    // Shadow ellipse on the floor
+    ctx.fillStyle = "rgba(0,0,0,0.4)";
     ctx.beginPath();
-    ctx.ellipse(playerScreenX, floorY + 4, sw * 0.3, 8, 0, 0, Math.PI * 2);
+    ctx.ellipse(playerScreenX, ACTION_Y + 2, sw * 0.28, 7, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Draw the sprite
+    // Draw sprite
     ctx.drawImage(img, dx, dy, sw, sh);
 
-    // Red flash overlay when hit
+    // Red flash on hit
     if (playerFlash > 0) {
       ctx.globalCompositeOperation = "source-atop";
       ctx.fillStyle = "rgba(255, 80, 80, " + playerFlash + ")";
@@ -382,21 +394,21 @@ var Renderer = (function () {
       ctx.globalCompositeOperation = "source-over";
     }
 
-    // Player label
-    ctx.font = "bold 12px 'Courier New'";
+    // Name label below feet
+    ctx.font = "bold 11px 'Courier New'";
     ctx.textAlign = "center";
     ctx.fillStyle = "#ffd700";
     ctx.shadowColor = "#000";
     ctx.shadowBlur = 3;
     var ps = Player.getState();
-    ctx.fillText("Lv" + ps.level + " " + GameData.heroes[ps.heroClass].name, playerScreenX, floorY + 22);
+    ctx.fillText("Lv" + ps.level + " " + GameData.heroes[ps.heroClass].name, playerScreenX, ACTION_Y + 18);
     ctx.shadowBlur = 0;
 
     ctx.restore();
   }
 
   /**
-   * Draw the current enemy sprite at its world position.
+   * Draw the current enemy in the corridor.
    */
   function _drawEnemy() {
     if (!enemyVisible) return;
@@ -409,31 +421,31 @@ var Renderer = (function () {
     var isBoss = enemy.isBoss;
     var srcW = isBoss ? 128 : 64;
     var srcH = isBoss ? 128 : 96;
-    var drawScale = isBoss ? 2.8 : 2.5;
+    var drawScale = isBoss ? 3.0 : 2.8;
     var sw = srcW * drawScale;
     var sh = srcH * drawScale;
 
-    // Convert enemy world position to screen position
+    // World to screen X
     var screenX = enemyWorldX - worldX;
-    var dy = enemyScreenY + (isBoss ? -50 : 0);
 
-    // Idle bob for enemy
-    var bob = Math.sin(Date.now() * 0.003) * 2;
+    // Idle bob
+    var bob = Math.sin(Date.now() * 0.003) * 2.5;
 
+    // Feet on floor
     var dx = screenX - sw / 2 + enemyShake;
-    var drawY = dy + bob;
+    var dy = ACTION_Y - sh + bob + (isBoss ? -20 : 0);
 
     ctx.save();
     ctx.globalAlpha = enemyAlpha;
 
     // Shadow
-    ctx.fillStyle = "rgba(0,0,0,0.3)";
+    ctx.fillStyle = "rgba(0,0,0,0.4)";
     ctx.beginPath();
-    ctx.ellipse(screenX, floorY + 4, sw * 0.3, isBoss ? 12 : 8, 0, 0, Math.PI * 2);
+    ctx.ellipse(screenX, ACTION_Y + 2, sw * 0.28, isBoss ? 10 : 7, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Flip enemy to face LEFT (toward the player)
-    ctx.translate(dx + sw, drawY);
+    // Flip to face left (toward player)
+    ctx.translate(dx + sw, dy);
     ctx.scale(-1, 1);
     ctx.drawImage(img, 0, 0, sw, sh);
 
@@ -447,35 +459,37 @@ var Renderer = (function () {
 
     ctx.restore();
 
-    // --- HP BAR above enemy ---
+    // --- HP BAR ---
     ctx.save();
     ctx.globalAlpha = enemyAlpha;
-    var barW = sw * 0.8;
+    var barW = sw * 0.75;
     var barH = 8;
     var barX = screenX - barW / 2;
-    var barY = drawY - 24;
+    var barY = dy - 22;
     var hpPct = enemy.hp / enemy.maxHp;
 
-    ctx.fillStyle = "#333";
-    ctx.fillRect(barX, barY, barW, barH);
+    // Background
+    ctx.fillStyle = "#222";
+    ctx.fillRect(barX - 1, barY - 1, barW + 2, barH + 2);
 
-    var r = Math.floor(255 * (1 - hpPct));
-    var g = Math.floor(255 * hpPct);
-    ctx.fillStyle = "rgb(" + r + "," + g + ",50)";
+    // Fill (red→green gradient based on HP %)
+    var r = Math.floor(220 * (1 - hpPct));
+    var g = Math.floor(220 * hpPct);
+    ctx.fillStyle = "rgb(" + r + "," + g + ",40)";
     ctx.fillRect(barX, barY, barW * hpPct, barH);
 
+    // Border
     ctx.strokeStyle = "#555";
     ctx.lineWidth = 1;
     ctx.strokeRect(barX, barY, barW, barH);
 
-    // Enemy name
-    ctx.font = "bold 12px 'Courier New'";
+    // Name label
+    ctx.font = "bold 11px 'Courier New'";
     ctx.textAlign = "center";
-    ctx.fillStyle = enemy.isBoss ? "#ff4444" : "#ddd";
+    ctx.fillStyle = isBoss ? "#ff4444" : "#ddd";
     ctx.shadowColor = "#000";
     ctx.shadowBlur = 3;
-    var label = (enemy.isBoss ? "BOSS " : "") + enemy.name + " Lv" + enemy.level;
-    ctx.fillText(label, screenX, barY - 6);
+    ctx.fillText((isBoss ? "BOSS " : "") + enemy.name + " Lv" + enemy.level, screenX, barY - 6);
     ctx.shadowBlur = 0;
     ctx.restore();
   }
@@ -502,169 +516,110 @@ var Renderer = (function () {
   }
 
   /**
-   * Draw boss entrance overlay.
+   * Boss entrance overlay — red flash + text.
    */
   function _drawBossEntrance() {
     ctx.save();
-    ctx.globalAlpha = bossEntrance * 0.5;
+    ctx.globalAlpha = bossEntrance * 0.45;
     ctx.fillStyle = "#ff0000";
     ctx.fillRect(0, 0, W, H);
-    ctx.globalAlpha = Math.min(1, bossEntrance * 2);
-    ctx.font = "bold 40px 'Courier New'";
+    ctx.globalAlpha = Math.min(1, bossEntrance * 2.5);
+    ctx.font = "bold 42px 'Courier New'";
     ctx.textAlign = "center";
     ctx.fillStyle = "#fff";
     ctx.shadowColor = "#f00";
-    ctx.shadowBlur = 20;
-    ctx.fillText("BOSS FIGHT!", W / 2, H * 0.4);
+    ctx.shadowBlur = 25;
+    ctx.fillText("BOSS FIGHT!", W / 2, H * 0.38);
     ctx.shadowBlur = 0;
     ctx.restore();
   }
 
   // ==========================================
-  //  PUBLIC API — called by game.js / combat.js
+  //  PUBLIC API
   // ==========================================
 
-  /**
-   * Start walking — the player resumes moving through the world.
-   */
+  /** Start walking through the dungeon. */
   function startWalking() {
     state = "walking";
     enemyVisible = false;
     scrollSpeed = 0.5;
   }
 
-  /**
-   * An enemy has spawned — place it ahead in the world and start approaching.
-   */
+  /** Enemy spawned — place it ahead, start approaching. */
   function notifyEnemySpawn(isBoss) {
-    // Place enemy ahead of current position
-    var dist = W * 0.5 + 100 + Math.random() * 200;
+    var dist = W * 0.5 + 80 + Math.random() * 150;
     enemyWorldX = worldX + playerScreenX + dist;
     enemyVisible = true;
     enemyAlpha = 1;
     state = "approaching";
-
-    if (isBoss) {
-      bossEntrance = 1;
-    }
+    if (isBoss) bossEntrance = 1;
   }
 
-  /**
-   * Player attacks — lunge forward + damage number on enemy.
-   */
+  /** Player attack animation + damage floater. */
   function animatePlayerAttack(damage) {
-    playerShake = 6; // slight forward push
-    enemyShake = (Math.random() > 0.5 ? 1 : -1) * 10;
+    playerShake = 5;
+    enemyShake = (Math.random() > 0.5 ? 1 : -1) * 12;
     enemyFlash = 0.7;
-
-    // Damage floater on enemy (world-anchored so it scrolls with them)
     floaters.push({
       text: "-" + damage,
       worldX: enemyWorldX + (Math.random() * 30 - 15),
-      y: enemyScreenY - 10,
-      vy: -1.5,
-      alpha: 1.2,
-      color: "#ff4444",
-      size: 22
+      y: ACTION_Y - 96 * 2.8 - 20,
+      vy: -1.5, alpha: 1.3, color: "#ff4444", size: 22
     });
   }
 
-  /**
-   * Enemy attacks — shake player + damage number.
-   */
+  /** Enemy attack animation + damage floater. */
   function animateEnemyAttack(damage) {
-    playerShake = (Math.random() > 0.5 ? 1 : -1) * 10;
+    playerShake = (Math.random() > 0.5 ? 1 : -1) * 12;
     playerFlash = 0.6;
-
     floaters.push({
       text: "-" + damage,
       x: playerScreenX + (Math.random() * 20 - 10),
-      y: playerScreenY - 10,
-      vy: -1.5,
-      alpha: 1.2,
-      color: "#ff6666",
-      size: 18
+      y: ACTION_Y - 96 * 2.8 - 20,
+      vy: -1.5, alpha: 1.3, color: "#ff6666", size: 18
     });
   }
 
-  /**
-   * Enemy died — fade it out, show rewards, then resume walking.
-   */
+  /** Enemy died — fade out, show rewards, resume walking. */
   function notifyEnemyDeath(xp, gold, isBoss) {
     state = "victory";
-
-    // Fade out enemy
-    var fadeInterval = setInterval(function () {
-      enemyAlpha -= 0.05;
-      if (enemyAlpha <= 0) {
-        enemyAlpha = 0;
-        clearInterval(fadeInterval);
-      }
+    // Fade enemy out
+    var fade = setInterval(function () {
+      enemyAlpha -= 0.06;
+      if (enemyAlpha <= 0) { enemyAlpha = 0; clearInterval(fade); }
     }, 30);
-
-    // XP + gold floaters in the middle of the screen
-    floaters.push({
-      text: "+" + xp + " XP",
-      x: W * 0.5,
-      y: H * 0.35,
-      vy: -1,
-      alpha: 1.5,
-      color: "#88aaff",
-      size: 18
-    });
-    floaters.push({
-      text: "+" + gold + "g",
-      x: W * 0.5,
-      y: H * 0.35 + 26,
-      vy: -1,
-      alpha: 1.5,
-      color: "#ffd700",
-      size: 18
-    });
-
-    // Resume walking after a brief pause
+    // Reward floaters
+    floaters.push({ text: "+" + xp + " XP", x: W * 0.5, y: H * 0.32, vy: -1, alpha: 1.6, color: "#88aaff", size: 20 });
+    floaters.push({ text: "+" + gold + "g", x: W * 0.5, y: H * 0.32 + 28, vy: -1, alpha: 1.6, color: "#ffd700", size: 20 });
+    // Resume walking after pause
     setTimeout(function () {
       enemyVisible = false;
       startWalking();
     }, isBoss ? 1200 : 700);
   }
 
-  /**
-   * Player died — stop everything.
-   */
+  /** Player died — stop. */
   function notifyPlayerDeath() {
     state = "dead";
     scrollSpeed = 0;
   }
 
-  /**
-   * Player respawned — start walking again.
-   */
+  /** Player respawned — walk again. */
   function notifyPlayerRespawn() {
     startWalking();
   }
 
-  /**
-   * Show level up floater.
-   */
+  /** Level up floater. */
   function showLevelUp(level) {
     floaters.push({
       text: "LEVEL UP! Lv" + level,
-      x: playerScreenX,
-      y: playerScreenY - 50,
-      vy: -1.5,
-      alpha: 2,
-      color: "#ffd700",
-      size: 26
+      x: playerScreenX, y: ACTION_Y - 96 * 2.8 - 50,
+      vy: -1.5, alpha: 2.2, color: "#ffd700", size: 28
     });
   }
 
-  /**
-   * Get current renderer state (for combat.js to know when to start fighting).
-   */
-  function getState() {
-    return state;
-  }
+  /** Current renderer state for combat.js to read. */
+  function getState() { return state; }
 
   return {
     init: init,

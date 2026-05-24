@@ -132,11 +132,67 @@ var AssetLoader = (function () {
     _queue("tile_overworld_01","assets/tilesets/overworld/Overworld Floor 01.png");
     _queue("tile_overworld_02","assets/tilesets/overworld/Overworld Floor 02.png");
 
-    // --- TREE / OBSTACLE TILES ---
+    // --- WALL / COLUMN TILES (for dungeon corridor framing) ---
+    // Castle walls
+    _queue("castle_wall_left_01",  "assets/tilesets/castle/Left Wall Tile 01.png");
+    _queue("castle_wall_left_02",  "assets/tilesets/castle/Left Wall Tile 02.png");
+    _queue("castle_wall_left_03",  "assets/tilesets/castle/Left Wall Tile 03.png");
+    _queue("castle_wall_right_01", "assets/tilesets/castle/Right Wall Tile 01.png");
+    _queue("castle_wall_right_02", "assets/tilesets/castle/Right Wall Tile 02.png");
+    _queue("castle_wall_right_03", "assets/tilesets/castle/Right Wall Tile 03.png");
+    _queue("castle_sconce_left",   "assets/tilesets/castle/Left Sconce Wall Tile.png");
+    _queue("castle_sconce_right",  "assets/tilesets/castle/Right Sconce Wall Tile.png");
+    _queue("castle_column",        "assets/tilesets/castle/Column Tile.png");
+    _queue("castle_column_02",     "assets/tilesets/castle/Column Tile 02.png");
+
+    // Cavern walls
+    _queue("cavern_wall_mid",       "assets/tilesets/cavern/Cavern Wall Middle.png");
+    _queue("cavern_wall_top_left",  "assets/tilesets/cavern/Cavern Wall Top Left.png");
+    _queue("cavern_wall_top_right", "assets/tilesets/cavern/Cavern Wall Top Right.png");
+    _queue("cavern_wall_bot_left",  "assets/tilesets/cavern/Cavern Wall Bottom Left.png");
+    _queue("cavern_wall_bot_right", "assets/tilesets/cavern/Cavern Wall Bottom Right.png");
+    _queue("cavern_stalagmite_01",  "assets/tilesets/cavern/Cavern Stalagmite Tile 01.png");
+    _queue("cavern_stalagmite_02",  "assets/tilesets/cavern/Cavern Stalagmite Tile 02.png");
+
+    // Hell walls/columns
+    _queue("hell_column",      "assets/tilesets/hell/Hell Column.png");
+    _queue("hell_spire_01",    "assets/tilesets/hell/Hell Spire 01.png");
+    _queue("hell_spire_02",    "assets/tilesets/hell/Hell Spire 02.png");
+    _queue("hell_bone_01",     "assets/tilesets/hell/Hell Bone Pile 01.png");
+    _queue("hell_bone_02",     "assets/tilesets/hell/Hell Bone Pile 02.png");
+    _queue("hell_torch",       "assets/tilesets/hell/Hell Torch.png");
+    _queue("hell_lava_01",     "assets/tilesets/hell/Hell Lava 01.png");
+    _queue("hell_lava_02",     "assets/tilesets/hell/Hell Lava 02.png");
+
+    // Cosmic walls
+    _queue("cosmic_wall_01",   "assets/tilesets/cosmic/Cosmic Wall 01.png");
+    _queue("cosmic_wall_02",   "assets/tilesets/cosmic/Cosmic Wall 02.png");
+    _queue("cosmic_wall_03",   "assets/tilesets/cosmic/Cosmic Wall 03.png");
+    _queue("cosmic_light_01",  "assets/tilesets/cosmic/Cosmic Light 01.png");
+    _queue("cosmic_light_02",  "assets/tilesets/cosmic/Cosmic Light 02.png");
+
+    // Cemetery props
+    _queue("cemetery_grave_01",  "assets/tilesets/cemetery/Cemetery Gravestone 01.png");
+    _queue("cemetery_grave_02",  "assets/tilesets/cemetery/Cemetery Gravestone 02.png");
+    _queue("cemetery_tree_01",   "assets/tilesets/cemetery/Cemetery Tree 1.png");
+    _queue("cemetery_tree_02",   "assets/tilesets/cemetery/Cemetery Tree 02.png");
+    _queue("cemetery_fence_col", "assets/tilesets/cemetery/Cemetery Fence Column.png");
+
+    // Overworld walls
+    _queue("overworld_wall_mid_01",  "assets/tilesets/overworld/Overworld Wall Middle 01.png");
+    _queue("overworld_wall_mid_02",  "assets/tilesets/overworld/Overworld Wall Middle 02.png");
+    _queue("overworld_rocks_01",     "assets/tilesets/overworld/Overworld Rocks 01.png");
+    _queue("overworld_rocks_02",     "assets/tilesets/overworld/Overworld Rocks 02.png");
+
+    // Forest props (trees/rocks for forest corridor decoration)
     _queue("tree_01",          "assets/tilesets/forest/Tree Tile 01.png");
     _queue("tree_02",          "assets/tilesets/forest/Tree Tile 02.png");
+    _queue("tree_03",          "assets/tilesets/forest/Tree Tile 03.png");
+    _queue("tree_04",          "assets/tilesets/forest/Tree Tile 04.png");
     _queue("grass_01",         "assets/tilesets/forest/Grass Tile 01.png");
+    _queue("grass_02",         "assets/tilesets/forest/Grass Tile 02.png");
     _queue("forest_rock_01",   "assets/tilesets/forest/Forest Rock Tile 01.png");
+    _queue("forest_rock_02",   "assets/tilesets/forest/Forest Rock Tile 02.png");
 
     // Return a promise that checks loading progress
     return new Promise(function (resolve) {
