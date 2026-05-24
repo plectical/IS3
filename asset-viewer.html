@@ -523,20 +523,44 @@ function worldToScreen(wx, wy) {
   };
 }
 
-// Snap a world coord to grid
-function snapWorld(wx, wy) {
+// --- ISOMETRIC GRID ---
+// Tiles are isometric diamonds inside a square image.
+// tileW = full image width (gridSize), tileH = half of that for iso spacing.
+// Even rows start at x=0, odd rows are offset by half a tile width.
+// Rows are spaced tileH apart (half the image height).
+
+// Convert isometric grid col,row → world pixel position (top-left of the tile image)
+function isoToWorld(col, row) {
+  var tileW = gridSize;
+  var tileH = gridSize / 2; // vertical spacing between rows
+  var offsetX = (row % 2 !== 0) ? tileW / 2 : 0; // odd rows shifted right
   return {
-    x: Math.floor(wx / gridSize) * gridSize,
-    y: Math.floor(wy / gridSize) * gridSize
+    x: col * tileW + offsetX,
+    y: row * tileH
   };
 }
 
-// Grid col/row from world coords
+// Convert world pixel position → nearest isometric grid col,row
+function worldToIso(wx, wy) {
+  var tileW = gridSize;
+  var tileH = gridSize / 2;
+  // Rough row from Y
+  var row = Math.round(wy / tileH);
+  // Adjust X for row offset
+  var offsetX = (row % 2 !== 0) ? tileW / 2 : 0;
+  var col = Math.round((wx - offsetX) / tileW);
+  return { col: col, row: row };
+}
+
+// Snap a world coord to the nearest iso grid position
+function snapWorld(wx, wy) {
+  var g = worldToIso(wx, wy);
+  return isoToWorld(g.col, g.row);
+}
+
+// Grid col/row from world coords (for tile painting)
 function worldToGrid(wx, wy) {
-  return {
-    col: Math.floor(wx / gridSize),
-    row: Math.floor(wy / gridSize)
-  };
+  return worldToIso(wx, wy);
 }
 
 // =====================================================
@@ -558,39 +582,56 @@ function draw() {
   var viewBR = screenToWorld(W, H);
   ctx.fillRect(viewTL.x - 100, viewTL.y - 100, viewBR.x - viewTL.x + 200, viewBR.y - viewTL.y + 200);
 
-  // Grid
+  // Grid — draw isometric diamond guides
   if (showGrid) {
-    ctx.strokeStyle = "rgba(255,255,255,0.08)";
+    ctx.strokeStyle = "rgba(255,255,255,0.07)";
     ctx.lineWidth = 1 / cam.zoom;
-    var gs = gridSize;
-    var startCol = Math.floor(viewTL.x / gs) - 1;
-    var endCol = Math.ceil(viewBR.x / gs) + 1;
-    var startRow = Math.floor(viewTL.y / gs) - 1;
-    var endRow = Math.ceil(viewBR.y / gs) + 1;
+    var tileW = gridSize;
+    var tileH = gridSize / 2; // iso row spacing
+    var halfW = tileW / 2;
+    var halfH = tileH / 2;
 
-    for (var c = startCol; c <= endCol; c++) {
-      ctx.beginPath(); ctx.moveTo(c * gs, viewTL.y - 100); ctx.lineTo(c * gs, viewBR.y + 100); ctx.stroke();
-    }
+    // Figure out which rows/cols are visible
+    var startRow = Math.floor(viewTL.y / tileH) - 2;
+    var endRow = Math.ceil(viewBR.y / tileH) + 2;
+    var startCol = Math.floor(viewTL.x / tileW) - 2;
+    var endCol = Math.ceil(viewBR.x / tileW) + 2;
+
+    // Draw diamond outlines for each iso cell
     for (var r = startRow; r <= endRow; r++) {
-      ctx.beginPath(); ctx.moveTo(viewTL.x - 100, r * gs); ctx.lineTo(viewBR.x + 100, r * gs); ctx.stroke();
+      for (var c = startCol; c <= endCol; c++) {
+        var pos = isoToWorld(c, r);
+        // Diamond center
+        var cx = pos.x + halfW;
+        var cy = pos.y + halfH;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - halfH);       // top
+        ctx.lineTo(cx + halfW, cy);       // right
+        ctx.lineTo(cx, cy + halfH);       // bottom
+        ctx.lineTo(cx - halfW, cy);       // left
+        ctx.closePath();
+        ctx.stroke();
+      }
     }
 
     // Origin crosshair
-    ctx.strokeStyle = "rgba(255,100,100,0.2)";
+    ctx.strokeStyle = "rgba(255,100,100,0.25)";
     ctx.lineWidth = 2 / cam.zoom;
     ctx.beginPath(); ctx.moveTo(-20, 0); ctx.lineTo(20, 0); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(0, 20); ctx.stroke();
   }
 
-  // --- PAINTED TILES ---
+  // --- PAINTED TILES (isometric positions) ---
   for (var key in tileMap) {
     var t = tileMap[key];
     var parts = key.split(",");
-    var tx = parseInt(parts[0]) * gridSize;
-    var ty = parseInt(parts[1]) * gridSize;
+    var col = parseInt(parts[0]);
+    var row = parseInt(parts[1]);
+    // Convert iso grid position to world pixel coords
+    var pos = isoToWorld(col, row);
     var img = images[t.key];
     if (img && img.complete && img.naturalWidth) {
-      ctx.drawImage(img, tx, ty, gridSize, gridSize);
+      ctx.drawImage(img, pos.x, pos.y, gridSize, gridSize);
     }
   }
 
