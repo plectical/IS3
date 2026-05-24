@@ -15,271 +15,278 @@
       overflow: hidden;
     }
 
-    /* --- LEFT PANEL: asset palette --- */
+    /* --- LEFT: asset palette --- */
     #palette {
-      width: 220px;
-      min-width: 220px;
-      background: #111118;
-      border-right: 1px solid #333;
-      overflow-y: auto;
-      padding: 8px;
-    }
-    #palette h2 {
-      font-size: 13px;
-      color: #ffd700;
-      margin: 0 0 6px;
-    }
-    .pal-section { margin-bottom: 12px; }
-    .pal-section h3 {
-      font-size: 10px;
-      color: #88aaff;
-      margin-bottom: 4px;
-      border-bottom: 1px solid #222;
-      padding-bottom: 2px;
-      cursor: pointer;
-    }
-    .pal-section h3:hover { color: #aaccff; }
-    .pal-grid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 4px;
-    }
-    .pal-grid.collapsed { display: none; }
-    .pal-item {
-      background: #1a1a28;
-      border: 1px solid #333;
-      border-radius: 3px;
-      padding: 3px;
-      cursor: grab;
-      text-align: center;
-      transition: border-color 0.15s;
-    }
-    .pal-item:hover { border-color: #ffd700; }
-    .pal-item img {
-      image-rendering: pixelated;
-      display: block;
-      max-width: 48px;
-      max-height: 48px;
-      margin: 0 auto;
-    }
-    .pal-item .name {
-      font-size: 7px;
-      color: #777;
-      margin-top: 2px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      max-width: 52px;
-    }
-
-    /* --- CENTER: scene canvas --- */
-    #scene-area {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-    #toolbar {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 12px;
-      background: #151520;
-      border-bottom: 1px solid #333;
-      flex-wrap: wrap;
-    }
-    #toolbar button {
-      background: #252535;
-      color: #ddd;
-      border: 1px solid #444;
-      padding: 4px 10px;
-      font-family: 'Courier New', monospace;
-      font-size: 10px;
-      border-radius: 3px;
-      cursor: pointer;
-    }
-    #toolbar button:hover { background: #353548; border-color: #666; }
-    #toolbar button.active { background: #445; border-color: #88f; color: #fff; }
-    #toolbar label { font-size: 10px; color: #aaa; }
-    #toolbar select, #toolbar input[type="number"] {
-      background: #222;
-      color: #ddd;
-      border: 1px solid #444;
-      padding: 2px 6px;
-      font-family: 'Courier New', monospace;
-      font-size: 10px;
-      border-radius: 3px;
-    }
-    #toolbar input[type="number"] { width: 50px; }
-    .sep { width: 1px; height: 20px; background: #333; }
-
-    #canvas-wrap {
-      flex: 1;
-      position: relative;
-      overflow: hidden;
-      background: #080810;
-    }
-    #sceneCanvas {
-      position: absolute;
-      top: 0; left: 0;
-      image-rendering: pixelated;
-      cursor: crosshair;
-    }
-
-    /* --- RIGHT PANEL: selected object properties --- */
-    #props {
       width: 200px;
       min-width: 200px;
       background: #111118;
-      border-left: 1px solid #333;
-      padding: 8px;
+      border-right: 1px solid #333;
       overflow-y: auto;
-    }
-    #props h2 {
-      font-size: 13px;
-      color: #ffd700;
-      margin-bottom: 8px;
-    }
-    #props .prop-row {
+      padding: 6px;
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
+      flex-direction: column;
     }
-    #props .prop-row label { font-size: 10px; color: #aaa; }
-    #props .prop-row input {
-      background: #222;
-      color: #ddd;
-      border: 1px solid #444;
-      padding: 2px 4px;
-      font-family: 'Courier New', monospace;
-      font-size: 10px;
-      border-radius: 3px;
-      width: 70px;
+    #palette h2 { font-size: 12px; color: #ffd700; margin: 0 0 4px; }
+    .mode-tabs {
+      display: flex; gap: 4px; margin-bottom: 6px;
     }
-    #props .prop-row input[type="range"] { width: 90px; }
-    #prop-none { font-size: 10px; color: #666; }
-    #layer-list { margin-top: 12px; }
-    #layer-list h3 { font-size: 11px; color: #8f8; margin-bottom: 4px; }
+    .mode-tab {
+      flex: 1; padding: 4px; text-align: center;
+      font-size: 9px; background: #1a1a28; border: 1px solid #333;
+      border-radius: 3px; cursor: pointer; color: #aaa;
+    }
+    .mode-tab.active { background: #335; border-color: #88f; color: #fff; }
+    .pal-section { margin-bottom: 8px; }
+    .pal-section h3 {
+      font-size: 9px; color: #88aaff; margin-bottom: 3px;
+      border-bottom: 1px solid #222; padding-bottom: 2px; cursor: pointer;
+    }
+    .pal-section h3:hover { color: #aaccff; }
+    .pal-grid { display: flex; flex-wrap: wrap; gap: 3px; }
+    .pal-grid.collapsed { display: none; }
+    .pal-item {
+      background: #1a1a28; border: 1px solid #333; border-radius: 3px;
+      padding: 2px; cursor: pointer; text-align: center;
+    }
+    .pal-item:hover { border-color: #ffd700; }
+    .pal-item.selected { border-color: #4f4; border-width: 2px; background: #1a2a1a; }
+    .pal-item img {
+      image-rendering: pixelated; display: block;
+      max-width: 42px; max-height: 42px; margin: 0 auto;
+    }
+    .pal-item .name {
+      font-size: 6px; color: #666; overflow: hidden;
+      text-overflow: ellipsis; white-space: nowrap; max-width: 46px;
+    }
+
+    /* --- CENTER: canvas --- */
+    #scene-area { flex: 1; display: flex; flex-direction: column; }
+    #toolbar {
+      display: flex; align-items: center; gap: 6px; padding: 4px 10px;
+      background: #151520; border-bottom: 1px solid #333; flex-wrap: wrap;
+    }
+    #toolbar button, #toolbar .tb {
+      background: #252535; color: #ddd; border: 1px solid #444;
+      padding: 3px 8px; font-family: 'Courier New', monospace;
+      font-size: 9px; border-radius: 3px; cursor: pointer;
+    }
+    #toolbar button:hover { background: #353548; }
+    #toolbar button.active { background: #445; border-color: #88f; color: #fff; }
+    #toolbar label { font-size: 9px; color: #aaa; }
+    #toolbar select, #toolbar input {
+      background: #222; color: #ddd; border: 1px solid #444;
+      padding: 2px 4px; font-family: 'Courier New', monospace;
+      font-size: 9px; border-radius: 3px;
+    }
+    #toolbar input[type="number"] { width: 40px; }
+    .sep { width: 1px; height: 18px; background: #333; }
+    #status { font-size: 8px; color: #666; margin-left: auto; }
+
+    #canvas-wrap {
+      flex: 1; position: relative; overflow: hidden; background: #060610;
+    }
+    #sceneCanvas {
+      position: absolute; image-rendering: pixelated;
+    }
+
+    /* --- RIGHT: properties + layers --- */
+    #props {
+      width: 190px; min-width: 190px; background: #111118;
+      border-left: 1px solid #333; padding: 6px; overflow-y: auto;
+    }
+    #props h2 { font-size: 12px; color: #ffd700; margin-bottom: 6px; }
+    .prop-row {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;
+    }
+    .prop-row label { font-size: 9px; color: #aaa; }
+    .prop-row input, .prop-row select {
+      background: #222; color: #ddd; border: 1px solid #444;
+      padding: 1px 3px; font-family: 'Courier New', monospace;
+      font-size: 9px; border-radius: 3px;
+    }
+    .prop-row input[type="number"] { width: 55px; }
+    .prop-row input[type="range"] { width: 80px; }
+    .prop-row button {
+      background: #252535; color: #ddd; border: 1px solid #444;
+      padding: 2px 6px; font-size: 8px; cursor: pointer; border-radius: 3px;
+    }
+    #prop-none { font-size: 9px; color: #555; }
+    #layer-list h3 { font-size: 10px; color: #8f8; margin: 8px 0 4px; }
     .layer-item {
-      font-size: 9px;
-      padding: 3px 6px;
-      background: #1a1a28;
-      border: 1px solid #333;
-      margin-bottom: 2px;
-      border-radius: 2px;
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      font-size: 8px; padding: 2px 4px; background: #1a1a28;
+      border: 1px solid #333; margin-bottom: 1px; border-radius: 2px;
+      cursor: pointer; display: flex; justify-content: space-between;
     }
     .layer-item.selected { border-color: #ffd700; background: #252530; }
-    .layer-item .del-btn {
-      color: #f44;
-      cursor: pointer;
-      font-size: 10px;
-      padding: 0 4px;
-    }
-    .layer-item .del-btn:hover { color: #f88; }
-
-    /* Export area */
-    #export-area {
-      margin-top: 12px;
-      border-top: 1px solid #333;
-      padding-top: 8px;
-    }
+    .layer-item .del-btn { color: #f44; cursor: pointer; padding: 0 3px; }
+    #export-area { margin-top: 8px; border-top: 1px solid #333; padding-top: 6px; }
     #export-area textarea {
-      width: 100%;
-      height: 80px;
-      background: #1a1a28;
-      color: #8f8;
-      border: 1px solid #333;
-      font-family: 'Courier New', monospace;
-      font-size: 8px;
-      padding: 4px;
-      border-radius: 3px;
-      resize: vertical;
+      width: 100%; height: 60px; background: #1a1a28; color: #8f8;
+      border: 1px solid #333; font-size: 7px; padding: 3px; border-radius: 3px; resize: vertical;
     }
   </style>
 </head>
 <body>
 
-<!-- LEFT: Asset palette -->
 <div id="palette">
   <h2>Assets</h2>
+  <!-- Paint mode vs Object mode -->
+  <div class="mode-tabs">
+    <div class="mode-tab active" id="mode-paint">PAINT</div>
+    <div class="mode-tab" id="mode-object">OBJECT</div>
+    <div class="mode-tab" id="mode-erase">ERASE</div>
+  </div>
   <div id="pal-sections"></div>
 </div>
 
-<!-- CENTER: Scene canvas -->
 <div id="scene-area">
   <div id="toolbar">
-    <label>Scene:
-      <input type="number" id="tb-width" value="800" min="200" max="2000" step="50">
-      x
-      <input type="number" id="tb-height" value="500" min="200" max="1200" step="50">
+    <label>Grid:
+      <input type="number" id="tb-gridsize" value="64" min="16" max="128" step="16">
     </label>
-    <div class="sep"></div>
-    <label>BG:
-      <input type="color" id="tb-bgcolor" value="#0d1f0d">
-    </label>
-    <div class="sep"></div>
     <button id="tb-grid" class="active">Grid</button>
-    <button id="tb-snap">Snap</button>
+    <button id="tb-snap" class="active">Snap</button>
     <div class="sep"></div>
-    <button id="tb-export">Export JSON</button>
-    <button id="tb-import">Import JSON</button>
-    <button id="tb-clear">Clear All</button>
+    <label>BG: <input type="color" id="tb-bgcolor" value="#0d1f0d"></label>
     <div class="sep"></div>
-    <label style="font-size:9px;color:#666;">Drag assets from palette. Click to select. Arrow keys to nudge.</label>
+    <button id="tb-fill-row">Fill Row</button>
+    <button id="tb-fill-area">Fill Area</button>
+    <div class="sep"></div>
+    <button id="tb-undo">Undo</button>
+    <button id="tb-export">Export</button>
+    <button id="tb-import">Import</button>
+    <button id="tb-clear">Clear</button>
+    <span id="status">Pan: middle-click drag | Zoom: scroll | Paint: left-click drag</span>
   </div>
   <div id="canvas-wrap">
     <canvas id="sceneCanvas"></canvas>
   </div>
 </div>
 
-<!-- RIGHT: Properties -->
 <div id="props">
   <h2>Properties</h2>
   <div id="prop-panel">
-    <div id="prop-none">Click an object to edit its properties</div>
+    <div id="prop-none">Select an object or paint tiles</div>
     <div id="prop-fields" style="display:none;">
       <div class="prop-row"><label>X:</label><input type="number" id="prop-x" step="1"></div>
       <div class="prop-row"><label>Y:</label><input type="number" id="prop-y" step="1"></div>
-      <div class="prop-row"><label>Scale:</label><input type="range" id="prop-scale" min="0.2" max="5" step="0.1" value="1"><span id="prop-scale-val" style="font-size:9px;color:#ffd700;width:30px;">1.0</span></div>
-      <div class="prop-row"><label>Opacity:</label><input type="range" id="prop-alpha" min="0.1" max="1" step="0.05" value="1"><span id="prop-alpha-val" style="font-size:9px;color:#ffd700;width:30px;">1.0</span></div>
-      <div class="prop-row"><label>Flip X:</label><input type="checkbox" id="prop-flipx"></div>
+      <div class="prop-row"><label>Scale:</label><input type="range" id="prop-scale" min="0.2" max="6" step="0.1" value="1"><span id="prop-scale-val" style="font-size:8px;color:#ffd700;">1.0</span></div>
+      <div class="prop-row"><label>Alpha:</label><input type="range" id="prop-alpha" min="0.1" max="1" step="0.05" value="1"><span id="prop-alpha-val" style="font-size:8px;color:#ffd700;">1.0</span></div>
+      <div class="prop-row"><label>Flip:</label><input type="checkbox" id="prop-flipx"></div>
       <div class="prop-row"><label>Layer:</label>
-        <select id="prop-layer">
-          <option value="0">Back</option>
-          <option value="1">Mid</option>
-          <option value="2">Front</option>
-        </select>
+        <select id="prop-layer"><option value="0">Back</option><option value="1">Mid</option><option value="2">Front</option></select>
       </div>
-      <div class="prop-row"><button id="prop-dup" style="width:100%;">Duplicate</button></div>
-      <div class="prop-row"><button id="prop-del" style="width:100%;color:#f44;">Delete</button></div>
+      <div class="prop-row"><button id="prop-dup">Duplicate</button><button id="prop-del" style="color:#f44;">Delete</button></div>
     </div>
   </div>
-
   <div id="layer-list">
-    <h3>Scene Objects</h3>
-    <div id="obj-list"></div>
+    <h3>Objects (<span id="obj-count">0</span>)</h3>
+    <div id="obj-list" style="max-height:300px;overflow-y:auto;"></div>
   </div>
-
   <div id="export-area">
-    <textarea id="export-json" readonly placeholder="Export JSON will appear here..."></textarea>
+    <textarea id="export-json" readonly placeholder="Export JSON..."></textarea>
   </div>
 </div>
 
 <script>
 // =====================================================
-//  ASSET DEFINITIONS
+//  ASSETS
 // =====================================================
 var ASSET_CATS = {
+  "Floor Tiles": [
+    { key: "tile_forest_01", src: "assets/tilesets/forest/Forest Floor Tile 01.png", tile: true },
+    { key: "tile_forest_02", src: "assets/tilesets/forest/Forest Floor Tile 02.png", tile: true },
+    { key: "tile_forest_03", src: "assets/tilesets/forest/Forest Floor Tile 03.png", tile: true },
+    { key: "tile_forest_04", src: "assets/tilesets/forest/Forest Floor Tile 04.png", tile: true },
+    { key: "tile_forest_05", src: "assets/tilesets/forest/Forest Floor Tile 05.png", tile: true },
+    { key: "tile_castle_01", src: "assets/tilesets/castle/Floor Tile 01.png", tile: true },
+    { key: "tile_castle_02", src: "assets/tilesets/castle/Floor Tile 02.png", tile: true },
+    { key: "tile_castle_03", src: "assets/tilesets/castle/Floor Tile 03.png", tile: true },
+    { key: "tile_castle_04", src: "assets/tilesets/castle/Floor Tile 04.png", tile: true },
+    { key: "tile_castle_05", src: "assets/tilesets/castle/Floor Tile 05.png", tile: true },
+    { key: "tile_cavern_01", src: "assets/tilesets/cavern/Cavern Floor Tile 01.png", tile: true },
+    { key: "tile_cavern_02", src: "assets/tilesets/cavern/Cavern Floor Tile 02.png", tile: true },
+    { key: "tile_cavern_03", src: "assets/tilesets/cavern/Cavern Floor Tile 03.png", tile: true },
+    { key: "tile_cem_01", src: "assets/tilesets/cemetery/Cemetery Floor Tile 01.png", tile: true },
+    { key: "tile_cem_02", src: "assets/tilesets/cemetery/Cemetery Floor Tile 02.png", tile: true },
+    { key: "tile_cem_03", src: "assets/tilesets/cemetery/Cemetery Floor Tile 03.png", tile: true },
+    { key: "tile_hell_01", src: "assets/tilesets/hell/Hell Floor Tile 01.png", tile: true },
+    { key: "tile_hell_02", src: "assets/tilesets/hell/Hell Floor Tile 02.png", tile: true },
+    { key: "tile_hell_03", src: "assets/tilesets/hell/Hell Floor Tile 03.png", tile: true },
+    { key: "tile_cos_01", src: "assets/tilesets/cosmic/Cosmic Floor Tile 01.png", tile: true },
+    { key: "tile_cos_02", src: "assets/tilesets/cosmic/Cosmic Floor Tile 02.png", tile: true },
+    { key: "tile_ow_01", src: "assets/tilesets/overworld/Overworld Floor 01.png", tile: true },
+    { key: "tile_ow_02", src: "assets/tilesets/overworld/Overworld Floor 02.png", tile: true }
+  ],
+  "Walls": [
+    { key: "castle_wall_l1", src: "assets/tilesets/castle/Left Wall Tile 01.png", tile: true },
+    { key: "castle_wall_l2", src: "assets/tilesets/castle/Left Wall Tile 02.png", tile: true },
+    { key: "castle_wall_l3", src: "assets/tilesets/castle/Left Wall Tile 03.png", tile: true },
+    { key: "castle_wall_l4", src: "assets/tilesets/castle/Left Wall Tile 04.png", tile: true },
+    { key: "castle_wall_r1", src: "assets/tilesets/castle/Right Wall Tile 01.png", tile: true },
+    { key: "castle_wall_r2", src: "assets/tilesets/castle/Right Wall Tile 02.png", tile: true },
+    { key: "castle_wall_r3", src: "assets/tilesets/castle/Right Wall Tile 03.png", tile: true },
+    { key: "castle_wall_r4", src: "assets/tilesets/castle/Right Wall Tile 04.png", tile: true },
+    { key: "castle_sconce_l", src: "assets/tilesets/castle/Left Sconce Wall Tile.png", tile: true },
+    { key: "castle_sconce_r", src: "assets/tilesets/castle/Right Sconce Wall Tile.png", tile: true },
+    { key: "cavern_wall_mid", src: "assets/tilesets/cavern/Cavern Wall Middle.png", tile: true },
+    { key: "cavern_wall_tl", src: "assets/tilesets/cavern/Cavern Wall Top Left.png", tile: true },
+    { key: "cavern_wall_tr", src: "assets/tilesets/cavern/Cavern Wall Top Right.png", tile: true },
+    { key: "cavern_wall_bl", src: "assets/tilesets/cavern/Cavern Wall Bottom Left.png", tile: true },
+    { key: "cavern_wall_br", src: "assets/tilesets/cavern/Cavern Wall Bottom Right.png", tile: true },
+    { key: "ow_wall_01", src: "assets/tilesets/overworld/Overworld Wall Middle 01.png", tile: true },
+    { key: "ow_wall_02", src: "assets/tilesets/overworld/Overworld Wall Middle 02.png", tile: true },
+    { key: "ow_wall_tl1", src: "assets/tilesets/overworld/Overworld Wall Top Left 01.png", tile: true },
+    { key: "ow_wall_tr1", src: "assets/tilesets/overworld/Overworld Wall Top Right 01.png", tile: true },
+    { key: "ow_wall_bl1", src: "assets/tilesets/overworld/Overworld Wall Bottom Left 01.png", tile: true },
+    { key: "ow_wall_br1", src: "assets/tilesets/overworld/Overworld Wall Bottom Right 01.png", tile: true },
+    { key: "cos_wall_01", src: "assets/tilesets/cosmic/Cosmic Wall 01.png", tile: true },
+    { key: "cos_wall_02", src: "assets/tilesets/cosmic/Cosmic Wall 02.png", tile: true },
+    { key: "cos_wall_03", src: "assets/tilesets/cosmic/Cosmic Wall 03.png", tile: true }
+  ],
+  "Props": [
+    { key: "castle_column", src: "assets/tilesets/castle/Column Tile.png" },
+    { key: "castle_column_02", src: "assets/tilesets/castle/Column Tile 02.png" },
+    { key: "castle_bl_col", src: "assets/tilesets/castle/Bottom Left Column Tile.png" },
+    { key: "castle_br_col", src: "assets/tilesets/castle/Bottom Right Column Tile.png" },
+    { key: "cavern_stal_01", src: "assets/tilesets/cavern/Cavern Stalagmite Tile 01.png" },
+    { key: "cavern_stal_02", src: "assets/tilesets/cavern/Cavern Stalagmite Tile 02.png" },
+    { key: "cavern_stal_03", src: "assets/tilesets/cavern/Cavern Stalagmite Tile 03.png" },
+    { key: "hell_column", src: "assets/tilesets/hell/Hell Column.png" },
+    { key: "hell_spire_01", src: "assets/tilesets/hell/Hell Spire 01.png" },
+    { key: "hell_spire_02", src: "assets/tilesets/hell/Hell Spire 02.png" },
+    { key: "hell_bone_01", src: "assets/tilesets/hell/Hell Bone Pile 01.png" },
+    { key: "hell_bone_02", src: "assets/tilesets/hell/Hell Bone Pile 02.png" },
+    { key: "hell_torch", src: "assets/tilesets/hell/Hell Torch.png" },
+    { key: "hell_giant_spire", src: "assets/tilesets/hell/Hell Giant Spire.png" },
+    { key: "hell_lava_01", src: "assets/tilesets/hell/Hell Lava 01.png" },
+    { key: "hell_lava_02", src: "assets/tilesets/hell/Hell Lava 02.png" },
+    { key: "cos_light_01", src: "assets/tilesets/cosmic/Cosmic Light 01.png" },
+    { key: "cos_light_02", src: "assets/tilesets/cosmic/Cosmic Light 02.png" },
+    { key: "ow_rocks_01", src: "assets/tilesets/overworld/Overworld Rocks 01.png" },
+    { key: "ow_rocks_02", src: "assets/tilesets/overworld/Overworld Rocks 02.png" },
+    { key: "cem_grave_01", src: "assets/tilesets/cemetery/Cemetery Gravestone 01.png" },
+    { key: "cem_grave_02", src: "assets/tilesets/cemetery/Cemetery Gravestone 02.png" },
+    { key: "cem_tree_01", src: "assets/tilesets/cemetery/Cemetery Tree 1.png" },
+    { key: "cem_tree_02", src: "assets/tilesets/cemetery/Cemetery Tree 02.png" },
+    { key: "cem_fence_col", src: "assets/tilesets/cemetery/Cemetery Fence Column.png" },
+    { key: "tree_01", src: "assets/tilesets/forest/Tree Tile 01.png" },
+    { key: "tree_02", src: "assets/tilesets/forest/Tree Tile 02.png" },
+    { key: "tree_03", src: "assets/tilesets/forest/Tree Tile 03.png" },
+    { key: "tree_04", src: "assets/tilesets/forest/Tree Tile 04.png" },
+    { key: "tree_05", src: "assets/tilesets/forest/Tree Tile 05.png" },
+    { key: "tree_06", src: "assets/tilesets/forest/Tree Tile 06.png" },
+    { key: "grass_01", src: "assets/tilesets/forest/Grass Tile 01.png" },
+    { key: "grass_02", src: "assets/tilesets/forest/Grass Tile 02.png" },
+    { key: "forest_rock_01", src: "assets/tilesets/forest/Forest Rock Tile 01.png" },
+    { key: "forest_rock_02", src: "assets/tilesets/forest/Forest Rock Tile 02.png" }
+  ],
   "Heroes": [
-    { key: "knight",      src: "assets/heroes/Knight 64x96.png" },
-    { key: "warrior",     src: "assets/heroes/Warrior 64x96.png" },
-    { key: "archer",      src: "assets/heroes/Archer 64x96.png" },
-    { key: "assassin",    src: "assets/heroes/Assassin 64x96.png" },
-    { key: "cleric",      src: "assets/heroes/Cleric 64x96.png" },
+    { key: "knight", src: "assets/heroes/Knight 64x96.png" },
+    { key: "warrior", src: "assets/heroes/Warrior 64x96.png" },
+    { key: "archer", src: "assets/heroes/Archer 64x96.png" },
+    { key: "assassin", src: "assets/heroes/Assassin 64x96.png" },
+    { key: "cleric", src: "assets/heroes/Cleric 64x96.png" },
     { key: "necromancer", src: "assets/heroes/Necromancer 64x96.png" }
   ],
   "Enemies": [
@@ -298,21 +305,13 @@ var ASSET_CATS = {
     { key: "minotaur", src: "assets/enemies/Minotaur 64x96.png" },
     { key: "guardian", src: "assets/enemies/Guardian 64x96.png" },
     { key: "wraith", src: "assets/enemies/Wraith 64x96.png" },
-    { key: "undead_hound", src: "assets/enemies/Undead Hound 64x96.png" },
-    { key: "living_shadow", src: "assets/enemies/Living Shadow 64x96.png" },
-    { key: "warlock", src: "assets/enemies/Warlock 64x96.png" },
     { key: "hell_hound", src: "assets/enemies/Hell Hound 64x96.png" },
     { key: "fire_golem", src: "assets/enemies/Fire Golem 64x96.png" },
-    { key: "succubus", src: "assets/enemies/Succubus 64x96.png" },
     { key: "raging_demon", src: "assets/enemies/Raging Demon 64x96.png" },
-    { key: "berserker", src: "assets/enemies/Berserker 64x96.png" },
-    { key: "cyclops", src: "assets/enemies/Cyclops 64x96.png" },
     { key: "mind_flayer", src: "assets/enemies/Mind Flayer 64x96.png" },
     { key: "elder_lich", src: "assets/enemies/Elder Lich 64x96.png" },
-    { key: "beholder", src: "assets/enemies/Beholder 64x96.png" },
     { key: "emerald_dragon", src: "assets/enemies/Emerald Dragon 64x96.png" },
-    { key: "annihilator", src: "assets/enemies/Annihilator 64x96.png" },
-    { key: "manticore", src: "assets/enemies/Manticore 64x96.png" }
+    { key: "beholder", src: "assets/enemies/Beholder 64x96.png" }
   ],
   "Bosses": [
     { key: "boss_forest_spirit", src: "assets/bosses/Spirit of the Forest 128x160.png" },
@@ -320,125 +319,37 @@ var ASSET_CATS = {
     { key: "boss_king", src: "assets/bosses/The King.png" },
     { key: "boss_death", src: "assets/bosses/Death 128x128.png" },
     { key: "boss_balrog", src: "assets/bosses/Infernal Balrog 128x128.png" },
-    { key: "boss_nightmare", src: "assets/bosses/Unending Nightmare 128x128.png" },
     { key: "boss_dragon_king", src: "assets/bosses/Dragon King 128x128.png" },
     { key: "boss_behemoth", src: "assets/bosses/Behemoth Wyrm 128x128.png" },
     { key: "boss_leviathan", src: "assets/bosses/Leviathan 128x128.png" }
-  ],
-  "Forest": [
-    { key: "tile_forest_01", src: "assets/tilesets/forest/Forest Floor Tile 01.png" },
-    { key: "tile_forest_02", src: "assets/tilesets/forest/Forest Floor Tile 02.png" },
-    { key: "tile_forest_03", src: "assets/tilesets/forest/Forest Floor Tile 03.png" },
-    { key: "tree_01", src: "assets/tilesets/forest/Tree Tile 01.png" },
-    { key: "tree_02", src: "assets/tilesets/forest/Tree Tile 02.png" },
-    { key: "tree_03", src: "assets/tilesets/forest/Tree Tile 03.png" },
-    { key: "tree_04", src: "assets/tilesets/forest/Tree Tile 04.png" },
-    { key: "tree_05", src: "assets/tilesets/forest/Tree Tile 05.png" },
-    { key: "tree_06", src: "assets/tilesets/forest/Tree Tile 06.png" },
-    { key: "grass_01", src: "assets/tilesets/forest/Grass Tile 01.png" },
-    { key: "grass_02", src: "assets/tilesets/forest/Grass Tile 02.png" },
-    { key: "grass_03", src: "assets/tilesets/forest/Grass Tile 03.png" },
-    { key: "grass_04", src: "assets/tilesets/forest/Grass Tile 04.png" },
-    { key: "grass_05", src: "assets/tilesets/forest/Grass Tile 05.png" },
-    { key: "forest_rock_01", src: "assets/tilesets/forest/Forest Rock Tile 01.png" },
-    { key: "forest_rock_02", src: "assets/tilesets/forest/Forest Rock Tile 02.png" }
-  ],
-  "Castle": [
-    { key: "tile_castle_01", src: "assets/tilesets/castle/Floor Tile 01.png" },
-    { key: "tile_castle_02", src: "assets/tilesets/castle/Floor Tile 02.png" },
-    { key: "tile_castle_03", src: "assets/tilesets/castle/Floor Tile 03.png" },
-    { key: "castle_wall_l1", src: "assets/tilesets/castle/Left Wall Tile 01.png" },
-    { key: "castle_wall_l2", src: "assets/tilesets/castle/Left Wall Tile 02.png" },
-    { key: "castle_wall_r1", src: "assets/tilesets/castle/Right Wall Tile 01.png" },
-    { key: "castle_wall_r2", src: "assets/tilesets/castle/Right Wall Tile 02.png" },
-    { key: "castle_sconce_l", src: "assets/tilesets/castle/Left Sconce Wall Tile.png" },
-    { key: "castle_sconce_r", src: "assets/tilesets/castle/Right Sconce Wall Tile.png" },
-    { key: "castle_column", src: "assets/tilesets/castle/Column Tile.png" },
-    { key: "castle_column_02", src: "assets/tilesets/castle/Column Tile 02.png" },
-    { key: "castle_bl_col", src: "assets/tilesets/castle/Bottom Left Column Tile.png" },
-    { key: "castle_br_col", src: "assets/tilesets/castle/Bottom Right Column Tile.png" },
-    { key: "castle_bot_corner", src: "assets/tilesets/castle/Bottom Corner Column Tile.png" }
-  ],
-  "Cavern": [
-    { key: "tile_cavern_01", src: "assets/tilesets/cavern/Cavern Floor Tile 01.png" },
-    { key: "tile_cavern_02", src: "assets/tilesets/cavern/Cavern Floor Tile 02.png" },
-    { key: "cavern_wall_mid", src: "assets/tilesets/cavern/Cavern Wall Middle.png" },
-    { key: "cavern_wall_tl", src: "assets/tilesets/cavern/Cavern Wall Top Left.png" },
-    { key: "cavern_wall_tr", src: "assets/tilesets/cavern/Cavern Wall Top Right.png" },
-    { key: "cavern_wall_bl", src: "assets/tilesets/cavern/Cavern Wall Bottom Left.png" },
-    { key: "cavern_wall_br", src: "assets/tilesets/cavern/Cavern Wall Bottom Right.png" },
-    { key: "cavern_stal_01", src: "assets/tilesets/cavern/Cavern Stalagmite Tile 01.png" },
-    { key: "cavern_stal_02", src: "assets/tilesets/cavern/Cavern Stalagmite Tile 02.png" },
-    { key: "cavern_stal_03", src: "assets/tilesets/cavern/Cavern Stalagmite Tile 03.png" }
-  ],
-  "Cemetery": [
-    { key: "tile_cem_01", src: "assets/tilesets/cemetery/Cemetery Floor Tile 01.png" },
-    { key: "tile_cem_02", src: "assets/tilesets/cemetery/Cemetery Floor Tile 02.png" },
-    { key: "cem_grave_01", src: "assets/tilesets/cemetery/Cemetery Gravestone 01.png" },
-    { key: "cem_grave_02", src: "assets/tilesets/cemetery/Cemetery Gravestone 02.png" },
-    { key: "cem_grave_03", src: "assets/tilesets/cemetery/Cemetery Gravestone 03.png" },
-    { key: "cem_grave_04", src: "assets/tilesets/cemetery/Cemetery Gravestone 04.png" },
-    { key: "cem_tree_01", src: "assets/tilesets/cemetery/Cemetery Tree 1.png" },
-    { key: "cem_tree_02", src: "assets/tilesets/cemetery/Cemetery Tree 02.png" },
-    { key: "cem_fence_col", src: "assets/tilesets/cemetery/Cemetery Fence Column.png" }
-  ],
-  "Hell": [
-    { key: "tile_hell_01", src: "assets/tilesets/hell/Hell Floor Tile 01.png" },
-    { key: "tile_hell_02", src: "assets/tilesets/hell/Hell Floor Tile 02.png" },
-    { key: "hell_column", src: "assets/tilesets/hell/Hell Column.png" },
-    { key: "hell_spire_01", src: "assets/tilesets/hell/Hell Spire 01.png" },
-    { key: "hell_spire_02", src: "assets/tilesets/hell/Hell Spire 02.png" },
-    { key: "hell_spire_03", src: "assets/tilesets/hell/Hell Spire 03.png" },
-    { key: "hell_spire_04", src: "assets/tilesets/hell/Hell Spire 04.png" },
-    { key: "hell_bone_01", src: "assets/tilesets/hell/Hell Bone Pile 01.png" },
-    { key: "hell_bone_02", src: "assets/tilesets/hell/Hell Bone Pile 02.png" },
-    { key: "hell_bone_03", src: "assets/tilesets/hell/Hell Bone Pile 03.png" },
-    { key: "hell_torch", src: "assets/tilesets/hell/Hell Torch.png" },
-    { key: "hell_giant_spire", src: "assets/tilesets/hell/Hell Giant Spire.png" },
-    { key: "hell_lava_01", src: "assets/tilesets/hell/Hell Lava 01.png" },
-    { key: "hell_lava_02", src: "assets/tilesets/hell/Hell Lava 02.png" }
-  ],
-  "Cosmic": [
-    { key: "tile_cos_01", src: "assets/tilesets/cosmic/Cosmic Floor Tile 01.png" },
-    { key: "tile_cos_02", src: "assets/tilesets/cosmic/Cosmic Floor Tile 02.png" },
-    { key: "cos_wall_01", src: "assets/tilesets/cosmic/Cosmic Wall 01.png" },
-    { key: "cos_wall_02", src: "assets/tilesets/cosmic/Cosmic Wall 02.png" },
-    { key: "cos_wall_03", src: "assets/tilesets/cosmic/Cosmic Wall 03.png" },
-    { key: "cos_light_01", src: "assets/tilesets/cosmic/Cosmic Light 01.png" },
-    { key: "cos_light_02", src: "assets/tilesets/cosmic/Cosmic Light 02.png" }
-  ],
-  "Overworld": [
-    { key: "tile_ow_01", src: "assets/tilesets/overworld/Overworld Floor 01.png" },
-    { key: "tile_ow_02", src: "assets/tilesets/overworld/Overworld Floor 02.png" },
-    { key: "ow_wall_01", src: "assets/tilesets/overworld/Overworld Wall Middle 01.png" },
-    { key: "ow_wall_02", src: "assets/tilesets/overworld/Overworld Wall Middle 02.png" },
-    { key: "ow_rocks_01", src: "assets/tilesets/overworld/Overworld Rocks 01.png" },
-    { key: "ow_rocks_02", src: "assets/tilesets/overworld/Overworld Rocks 02.png" }
   ]
 };
 
 // =====================================================
 //  STATE
 // =====================================================
-var images = {};         // loaded Image objects keyed by asset key
-var srcMap = {};         // key → src path
-
-// Scene objects: each is { id, key, src, x, y, scale, alpha, flipX, layer }
-var sceneObjs = [];
+var images = {};
+var srcMap = {};
+var mode = "paint";       // "paint" | "object" | "erase"
+var selectedAsset = null; // currently selected palette asset { key, src, tile }
+var sceneObjs = [];       // free-placed objects (object mode)
+var tileMap = {};         // painted tiles: "col,row" → { key, src }
 var nextId = 1;
-var selectedId = null;   // currently selected object ID
-var dragging = null;     // { id, offsetX, offsetY } when dragging an object
-var dragNew = null;      // { key, src } when dragging from palette
-
-// Settings
+var selectedId = null;    // selected scene object ID
+var dragging = null;      // dragging object
+var painting = false;     // currently painting tiles
 var showGrid = true;
-var snapToGrid = false;
-var gridSize = 32;
+var snapOn = true;
+var gridSize = 64;
 var bgColor = "#0d1f0d";
+var undoStack = [];
 
-// Canvas stuff
+// Camera: pan/zoom on an infinite canvas
+var cam = { x: 0, y: 0, zoom: 1 };
+var panning = false;
+var panStart = { x: 0, y: 0, cx: 0, cy: 0 };
+
 var canvas, ctx, wrap;
-var sceneW = 800, sceneH = 500;
 
 // =====================================================
 //  INIT
@@ -451,7 +362,7 @@ window.addEventListener("DOMContentLoaded", function() {
   // Build palette
   buildPalette();
 
-  // Preload all images
+  // Load all images
   for (var cat in ASSET_CATS) {
     ASSET_CATS[cat].forEach(function(a) {
       srcMap[a.key] = a.src;
@@ -461,49 +372,45 @@ window.addEventListener("DOMContentLoaded", function() {
     });
   }
 
-  // Size canvas
   resizeCanvas();
   window.addEventListener("resize", resizeCanvas);
 
-  // Canvas mouse events
-  canvas.addEventListener("mousedown", onMouseDown);
-  canvas.addEventListener("mousemove", onMouseMove);
-  canvas.addEventListener("mouseup", onMouseUp);
-  canvas.addEventListener("dblclick", onDblClick);
-
-  // Drop from palette
-  canvas.addEventListener("dragover", function(e) { e.preventDefault(); });
-  canvas.addEventListener("drop", onDrop);
+  // Mouse events on the canvas wrapper (not canvas, since canvas moves)
+  wrap.addEventListener("mousedown", onMouseDown);
+  wrap.addEventListener("mousemove", onMouseMove);
+  wrap.addEventListener("mouseup", onMouseUp);
+  wrap.addEventListener("wheel", onWheel, { passive: false });
+  wrap.addEventListener("contextmenu", function(e) { e.preventDefault(); });
 
   // Keyboard
   window.addEventListener("keydown", onKeyDown);
 
+  // Mode tabs
+  document.getElementById("mode-paint").addEventListener("click", function() { setMode("paint"); });
+  document.getElementById("mode-object").addEventListener("click", function() { setMode("object"); });
+  document.getElementById("mode-erase").addEventListener("click", function() { setMode("erase"); });
+
   // Toolbar
   document.getElementById("tb-grid").addEventListener("click", function() {
-    showGrid = !showGrid;
-    this.classList.toggle("active", showGrid);
-    draw();
+    showGrid = !showGrid; this.classList.toggle("active", showGrid); draw();
   });
   document.getElementById("tb-snap").addEventListener("click", function() {
-    snapToGrid = !snapToGrid;
-    this.classList.toggle("active", snapToGrid);
+    snapOn = !snapOn; this.classList.toggle("active", snapOn);
+  });
+  document.getElementById("tb-gridsize").addEventListener("change", function() {
+    gridSize = parseInt(this.value) || 64; draw();
   });
   document.getElementById("tb-bgcolor").addEventListener("input", function() {
-    bgColor = this.value;
-    draw();
+    bgColor = this.value; draw();
   });
-  document.getElementById("tb-width").addEventListener("change", function() {
-    sceneW = parseInt(this.value) || 800;
-    resizeCanvas(); draw();
-  });
-  document.getElementById("tb-height").addEventListener("change", function() {
-    sceneH = parseInt(this.value) || 500;
-    resizeCanvas(); draw();
-  });
+  document.getElementById("tb-fill-row").addEventListener("click", fillRow);
+  document.getElementById("tb-fill-area").addEventListener("click", fillArea);
+  document.getElementById("tb-undo").addEventListener("click", undo);
   document.getElementById("tb-export").addEventListener("click", exportJSON);
   document.getElementById("tb-import").addEventListener("click", importJSON);
   document.getElementById("tb-clear").addEventListener("click", function() {
-    sceneObjs = []; selectedId = null; updateProps(); updateObjList(); draw();
+    pushUndo(); sceneObjs = []; tileMap = {}; selectedId = null;
+    updateProps(); updateObjList(); draw();
   });
 
   // Property inputs
@@ -523,8 +430,13 @@ window.addEventListener("DOMContentLoaded", function() {
   document.getElementById("prop-dup").addEventListener("click", duplicateSelected);
   document.getElementById("prop-del").addEventListener("click", deleteSelected);
 
-  // Initial draw
-  setTimeout(draw, 300);
+  // Load saved scene
+  loadFromStorage();
+
+  // Autosave every 3s
+  setInterval(saveToStorage, 3000);
+
+  setTimeout(draw, 400);
 });
 
 // =====================================================
@@ -535,15 +447,12 @@ function buildPalette() {
   for (var cat in ASSET_CATS) {
     var sec = document.createElement("div");
     sec.className = "pal-section";
-
     var h3 = document.createElement("h3");
     h3.textContent = cat + " ▾";
     sec.appendChild(h3);
-
     var grid = document.createElement("div");
     grid.className = "pal-grid";
 
-    // Toggle collapse on header click
     h3.addEventListener("click", (function(g, h) {
       return function() {
         g.classList.toggle("collapsed");
@@ -554,25 +463,23 @@ function buildPalette() {
     ASSET_CATS[cat].forEach(function(asset) {
       var item = document.createElement("div");
       item.className = "pal-item";
-      item.draggable = true;
       item.setAttribute("data-key", asset.key);
-      item.setAttribute("data-src", asset.src);
-
       var img = document.createElement("img");
       img.src = asset.src;
-
       var name = document.createElement("div");
       name.className = "name";
       name.textContent = asset.key;
-
       item.appendChild(img);
       item.appendChild(name);
       grid.appendChild(item);
 
-      // Drag start from palette
-      item.addEventListener("dragstart", function(e) {
-        dragNew = { key: asset.key, src: asset.src };
-        e.dataTransfer.setData("text/plain", asset.key);
+      // Click to select this as the active brush/object
+      item.addEventListener("click", function() {
+        // Deselect previous
+        var prev = document.querySelector(".pal-item.selected");
+        if (prev) prev.classList.remove("selected");
+        item.classList.add("selected");
+        selectedAsset = { key: asset.key, src: asset.src, tile: !!asset.tile };
       });
     });
 
@@ -581,52 +488,125 @@ function buildPalette() {
   }
 }
 
-// =====================================================
-//  CANVAS
-// =====================================================
-function resizeCanvas() {
-  canvas.width = sceneW;
-  canvas.height = sceneH;
-  canvas.style.width = sceneW + "px";
-  canvas.style.height = sceneH + "px";
+function setMode(m) {
+  mode = m;
+  document.querySelectorAll(".mode-tab").forEach(function(t) { t.classList.remove("active"); });
+  document.getElementById("mode-" + m).classList.add("active");
+  canvas.style.cursor = m === "erase" ? "not-allowed" : "crosshair";
 }
 
-function draw() {
-  ctx.clearRect(0, 0, sceneW, sceneH);
+// =====================================================
+//  CANVAS SIZING
+// =====================================================
+function resizeCanvas() {
+  var r = wrap.getBoundingClientRect();
+  canvas.width = r.width;
+  canvas.height = r.height;
+  canvas.style.width = r.width + "px";
+  canvas.style.height = r.height + "px";
+  draw();
+}
 
-  // Background
+// =====================================================
+//  CAMERA: screen ↔ world transforms
+// =====================================================
+function screenToWorld(sx, sy) {
+  return {
+    x: (sx - canvas.width / 2) / cam.zoom + cam.x,
+    y: (sy - canvas.height / 2) / cam.zoom + cam.y
+  };
+}
+function worldToScreen(wx, wy) {
+  return {
+    x: (wx - cam.x) * cam.zoom + canvas.width / 2,
+    y: (wy - cam.y) * cam.zoom + canvas.height / 2
+  };
+}
+
+// Snap a world coord to grid
+function snapWorld(wx, wy) {
+  return {
+    x: Math.floor(wx / gridSize) * gridSize,
+    y: Math.floor(wy / gridSize) * gridSize
+  };
+}
+
+// Grid col/row from world coords
+function worldToGrid(wx, wy) {
+  return {
+    col: Math.floor(wx / gridSize),
+    row: Math.floor(wy / gridSize)
+  };
+}
+
+// =====================================================
+//  DRAW
+// =====================================================
+function draw() {
+  var W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  ctx.save();
+  // Apply camera transform
+  ctx.translate(W / 2, H / 2);
+  ctx.scale(cam.zoom, cam.zoom);
+  ctx.translate(-cam.x, -cam.y);
+
+  // Background fill (large area)
   ctx.fillStyle = bgColor;
-  ctx.fillRect(0, 0, sceneW, sceneH);
+  var viewTL = screenToWorld(0, 0);
+  var viewBR = screenToWorld(W, H);
+  ctx.fillRect(viewTL.x - 100, viewTL.y - 100, viewBR.x - viewTL.x + 200, viewBR.y - viewTL.y + 200);
 
   // Grid
   if (showGrid) {
-    ctx.strokeStyle = "rgba(255,255,255,0.06)";
-    ctx.lineWidth = 1;
-    for (var x = 0; x < sceneW; x += gridSize) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, sceneH); ctx.stroke();
+    ctx.strokeStyle = "rgba(255,255,255,0.08)";
+    ctx.lineWidth = 1 / cam.zoom;
+    var gs = gridSize;
+    var startCol = Math.floor(viewTL.x / gs) - 1;
+    var endCol = Math.ceil(viewBR.x / gs) + 1;
+    var startRow = Math.floor(viewTL.y / gs) - 1;
+    var endRow = Math.ceil(viewBR.y / gs) + 1;
+
+    for (var c = startCol; c <= endCol; c++) {
+      ctx.beginPath(); ctx.moveTo(c * gs, viewTL.y - 100); ctx.lineTo(c * gs, viewBR.y + 100); ctx.stroke();
     }
-    for (var y = 0; y < sceneH; y += gridSize) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(sceneW, y); ctx.stroke();
+    for (var r = startRow; r <= endRow; r++) {
+      ctx.beginPath(); ctx.moveTo(viewTL.x - 100, r * gs); ctx.lineTo(viewBR.x + 100, r * gs); ctx.stroke();
+    }
+
+    // Origin crosshair
+    ctx.strokeStyle = "rgba(255,100,100,0.2)";
+    ctx.lineWidth = 2 / cam.zoom;
+    ctx.beginPath(); ctx.moveTo(-20, 0); ctx.lineTo(20, 0); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, -20); ctx.lineTo(0, 20); ctx.stroke();
+  }
+
+  // --- PAINTED TILES ---
+  for (var key in tileMap) {
+    var t = tileMap[key];
+    var parts = key.split(",");
+    var tx = parseInt(parts[0]) * gridSize;
+    var ty = parseInt(parts[1]) * gridSize;
+    var img = images[t.key];
+    if (img && img.complete && img.naturalWidth) {
+      ctx.drawImage(img, tx, ty, gridSize, gridSize);
     }
   }
 
-  // Sort by layer then by Y for draw order
+  // --- SCENE OBJECTS (sorted by layer then Y) ---
   var sorted = sceneObjs.slice().sort(function(a, b) {
     if (a.layer !== b.layer) return a.layer - b.layer;
     return a.y - b.y;
   });
-
-  // Draw objects
   sorted.forEach(function(obj) {
     var img = images[obj.key];
     if (!img || !img.complete || !img.naturalWidth) return;
-
     var w = img.naturalWidth * obj.scale;
     var h = img.naturalHeight * obj.scale;
 
     ctx.save();
     ctx.globalAlpha = obj.alpha;
-
     if (obj.flipX) {
       ctx.translate(obj.x + w, obj.y);
       ctx.scale(-1, 1);
@@ -634,30 +614,229 @@ function draw() {
     } else {
       ctx.drawImage(img, obj.x, obj.y, w, h);
     }
-
     ctx.restore();
 
-    // Selection highlight
+    // Selection box
     if (obj.id === selectedId) {
       ctx.strokeStyle = "#ffd700";
-      ctx.lineWidth = 2;
-      ctx.setLineDash([4, 3]);
+      ctx.lineWidth = 2 / cam.zoom;
+      ctx.setLineDash([4 / cam.zoom, 3 / cam.zoom]);
       ctx.strokeRect(obj.x - 1, obj.y - 1, w + 2, h + 2);
       ctx.setLineDash([]);
     }
   });
+
+  // --- GHOST PREVIEW (when painting, show tile under cursor) ---
+  if (ghostPos && selectedAsset && (mode === "paint" || mode === "erase")) {
+    ctx.globalAlpha = mode === "erase" ? 0.3 : 0.5;
+    if (mode === "erase") {
+      ctx.fillStyle = "rgba(255,0,0,0.3)";
+      ctx.fillRect(ghostPos.x, ghostPos.y, gridSize, gridSize);
+    } else {
+      var gImg = images[selectedAsset.key];
+      if (gImg && gImg.complete) {
+        ctx.drawImage(gImg, ghostPos.x, ghostPos.y, gridSize, gridSize);
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.restore();
+
+  // Status text
+  document.getElementById("status").textContent =
+    "Zoom: " + (cam.zoom * 100).toFixed(0) + "% | " +
+    "Tiles: " + Object.keys(tileMap).length + " | Objs: " + sceneObjs.length +
+    " | Pan: mid-click | Zoom: scroll | Mode: " + mode.toUpperCase();
 }
+
+var ghostPos = null; // snapped world position for ghost tile preview
 
 // =====================================================
 //  MOUSE EVENTS
 // =====================================================
-function canvasPos(e) {
-  var r = canvas.getBoundingClientRect();
-  return { x: e.clientX - r.left, y: e.clientY - r.top };
+function getWorldPos(e) {
+  var r = wrap.getBoundingClientRect();
+  var sx = e.clientX - r.left;
+  var sy = e.clientY - r.top;
+  return screenToWorld(sx, sy);
 }
 
-function hitTest(mx, my) {
-  // Test from front to back (highest layer first, then highest Y)
+function onMouseDown(e) {
+  var r = wrap.getBoundingClientRect();
+  var sx = e.clientX - r.left;
+  var sy = e.clientY - r.top;
+
+  // Middle mouse or right mouse = pan
+  if (e.button === 1 || e.button === 2) {
+    panning = true;
+    panStart = { x: sx, y: sy, cx: cam.x, cy: cam.y };
+    canvas.style.cursor = "grab";
+    e.preventDefault();
+    return;
+  }
+
+  // Left click
+  var world = screenToWorld(sx, sy);
+
+  if (mode === "paint") {
+    if (!selectedAsset) return;
+    painting = true;
+    pushUndo();
+    paintTileAt(world.x, world.y);
+    draw();
+  } else if (mode === "erase") {
+    painting = true;
+    pushUndo();
+    eraseTileAt(world.x, world.y);
+    draw();
+  } else if (mode === "object") {
+    // Hit test scene objects
+    var hit = hitTestObj(world.x, world.y);
+    if (hit) {
+      selectedId = hit.id;
+      dragging = { id: hit.id, ox: world.x - hit.x, oy: world.y - hit.y };
+      canvas.style.cursor = "grabbing";
+    } else if (selectedAsset) {
+      // Place new object
+      pushUndo();
+      var nx = snapOn ? snapWorld(world.x, world.y).x : Math.round(world.x);
+      var ny = snapOn ? snapWorld(world.x, world.y).y : Math.round(world.y);
+      var obj = {
+        id: nextId++, key: selectedAsset.key, src: selectedAsset.src,
+        x: nx, y: ny, scale: 2, alpha: 1, flipX: false, layer: 1
+      };
+      sceneObjs.push(obj);
+      selectedId = obj.id;
+    } else {
+      selectedId = null;
+    }
+    updateProps(); updateObjList(); draw();
+  }
+}
+
+function onMouseMove(e) {
+  var r = wrap.getBoundingClientRect();
+  var sx = e.clientX - r.left;
+  var sy = e.clientY - r.top;
+
+  // Panning
+  if (panning) {
+    var dx = (sx - panStart.x) / cam.zoom;
+    var dy = (sy - panStart.y) / cam.zoom;
+    cam.x = panStart.cx - dx;
+    cam.y = panStart.cy - dy;
+    draw();
+    return;
+  }
+
+  var world = screenToWorld(sx, sy);
+
+  // Ghost preview
+  if (mode === "paint" || mode === "erase") {
+    var snapped = snapWorld(world.x, world.y);
+    ghostPos = { x: snapped.x, y: snapped.y };
+  } else {
+    ghostPos = null;
+  }
+
+  // Paint/erase while dragging
+  if (painting && mode === "paint") {
+    paintTileAt(world.x, world.y);
+  } else if (painting && mode === "erase") {
+    eraseTileAt(world.x, world.y);
+  }
+
+  // Drag object
+  if (dragging) {
+    var obj = sceneObjs.find(function(o) { return o.id === dragging.id; });
+    if (obj) {
+      if (snapOn) {
+        var s = snapWorld(world.x - dragging.ox, world.y - dragging.oy);
+        obj.x = s.x; obj.y = s.y;
+      } else {
+        obj.x = Math.round(world.x - dragging.ox);
+        obj.y = Math.round(world.y - dragging.oy);
+      }
+      updateProps();
+    }
+  }
+
+  draw();
+}
+
+function onMouseUp(e) {
+  panning = false;
+  painting = false;
+  if (dragging) { dragging = null; }
+  canvas.style.cursor = mode === "erase" ? "not-allowed" : "crosshair";
+}
+
+function onWheel(e) {
+  e.preventDefault();
+  var factor = e.deltaY < 0 ? 1.12 : 0.89;
+  cam.zoom = Math.max(0.15, Math.min(5, cam.zoom * factor));
+  draw();
+}
+
+// =====================================================
+//  TILE PAINTING
+// =====================================================
+function paintTileAt(wx, wy) {
+  if (!selectedAsset) return;
+  var g = worldToGrid(wx, wy);
+  var key = g.col + "," + g.row;
+  tileMap[key] = { key: selectedAsset.key };
+}
+
+function eraseTileAt(wx, wy) {
+  var g = worldToGrid(wx, wy);
+  var key = g.col + "," + g.row;
+  delete tileMap[key];
+}
+
+// Fill an entire row with the selected tile
+function fillRow() {
+  if (!selectedAsset) { alert("Select a tile first"); return; }
+  var cols = parseInt(prompt("How many columns wide?", "20"));
+  if (!cols || cols < 1) return;
+  var startRow = parseInt(prompt("Which row? (0 = origin)", "0"));
+  if (isNaN(startRow)) return;
+  var startCol = parseInt(prompt("Starting column? (0 = origin)", "0"));
+  if (isNaN(startCol)) return;
+
+  pushUndo();
+  for (var c = startCol; c < startCol + cols; c++) {
+    tileMap[c + "," + startRow] = { key: selectedAsset.key };
+  }
+  draw();
+}
+
+// Fill a rectangular area with the selected tile
+function fillArea() {
+  if (!selectedAsset) { alert("Select a tile first"); return; }
+  var cols = parseInt(prompt("Width in tiles?", "12"));
+  if (!cols || cols < 1) return;
+  var rows = parseInt(prompt("Height in tiles?", "8"));
+  if (!rows || rows < 1) return;
+  var startCol = parseInt(prompt("Start column?", "0"));
+  if (isNaN(startCol)) return;
+  var startRow = parseInt(prompt("Start row?", "0"));
+  if (isNaN(startRow)) return;
+
+  pushUndo();
+  for (var r = startRow; r < startRow + rows; r++) {
+    for (var c = startCol; c < startCol + cols; c++) {
+      tileMap[c + "," + r] = { key: selectedAsset.key };
+    }
+  }
+  draw();
+}
+
+// =====================================================
+//  OBJECT HIT TEST
+// =====================================================
+function hitTestObj(wx, wy) {
   var sorted = sceneObjs.slice().sort(function(a, b) {
     if (b.layer !== a.layer) return b.layer - a.layer;
     return b.y - a.y;
@@ -668,154 +847,72 @@ function hitTest(mx, my) {
     if (!img || !img.naturalWidth) continue;
     var w = img.naturalWidth * obj.scale;
     var h = img.naturalHeight * obj.scale;
-    if (mx >= obj.x && mx <= obj.x + w && my >= obj.y && my <= obj.y + h) {
-      return obj;
-    }
+    if (wx >= obj.x && wx <= obj.x + w && wy >= obj.y && wy <= obj.y + h) return obj;
   }
   return null;
-}
-
-function onMouseDown(e) {
-  var pos = canvasPos(e);
-  var hit = hitTest(pos.x, pos.y);
-
-  if (hit) {
-    selectedId = hit.id;
-    dragging = { id: hit.id, offsetX: pos.x - hit.x, offsetY: pos.y - hit.y };
-    canvas.style.cursor = "grabbing";
-  } else {
-    selectedId = null;
-  }
-  updateProps();
-  updateObjList();
-  draw();
-}
-
-function onMouseMove(e) {
-  if (!dragging) return;
-  var pos = canvasPos(e);
-  var obj = sceneObjs.find(function(o) { return o.id === dragging.id; });
-  if (!obj) return;
-
-  var nx = pos.x - dragging.offsetX;
-  var ny = pos.y - dragging.offsetY;
-
-  if (snapToGrid) {
-    nx = Math.round(nx / gridSize) * gridSize;
-    ny = Math.round(ny / gridSize) * gridSize;
-  }
-
-  obj.x = Math.round(nx);
-  obj.y = Math.round(ny);
-  updateProps();
-  draw();
-}
-
-function onMouseUp(e) {
-  if (dragging) {
-    dragging = null;
-    canvas.style.cursor = "crosshair";
-  }
-}
-
-function onDblClick(e) {
-  // Double-click brings object to front
-  if (!selectedId) return;
-  var obj = sceneObjs.find(function(o) { return o.id === selectedId; });
-  if (obj) {
-    obj.layer = 2;
-    updateProps(); updateObjList(); draw();
-  }
-}
-
-function onDrop(e) {
-  e.preventDefault();
-  if (!dragNew) return;
-
-  var pos = canvasPos(e);
-  var nx = pos.x;
-  var ny = pos.y;
-
-  if (snapToGrid) {
-    nx = Math.round(nx / gridSize) * gridSize;
-    ny = Math.round(ny / gridSize) * gridSize;
-  }
-
-  // Create new scene object at the drop position
-  var obj = {
-    id: nextId++,
-    key: dragNew.key,
-    src: dragNew.src,
-    x: Math.round(nx),
-    y: Math.round(ny),
-    scale: 1.5,
-    alpha: 1,
-    flipX: false,
-    layer: 1
-  };
-
-  sceneObjs.push(obj);
-  selectedId = obj.id;
-  dragNew = null;
-
-  updateProps();
-  updateObjList();
-  draw();
 }
 
 // =====================================================
 //  KEYBOARD
 // =====================================================
 function onKeyDown(e) {
-  if (!selectedId) return;
-  // Don't capture if typing in an input
   if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
 
+  // Ctrl+Z = undo
+  if (e.key === "z" && e.ctrlKey) { undo(); e.preventDefault(); return; }
+
+  if (!selectedId) return;
   var obj = sceneObjs.find(function(o) { return o.id === selectedId; });
   if (!obj) return;
-
-  var step = e.shiftKey ? 10 : 1;
+  var step = e.shiftKey ? gridSize : 1;
 
   switch (e.key) {
-    case "ArrowLeft":  obj.x -= step; e.preventDefault(); break;
+    case "ArrowLeft": obj.x -= step; e.preventDefault(); break;
     case "ArrowRight": obj.x += step; e.preventDefault(); break;
-    case "ArrowUp":    obj.y -= step; e.preventDefault(); break;
-    case "ArrowDown":  obj.y += step; e.preventDefault(); break;
-    case "Delete":
-    case "Backspace":  deleteSelected(); e.preventDefault(); return;
-    case "d":
-      if (e.ctrlKey) { duplicateSelected(); e.preventDefault(); }
-      return;
+    case "ArrowUp": obj.y -= step; e.preventDefault(); break;
+    case "ArrowDown": obj.y += step; e.preventDefault(); break;
+    case "Delete": case "Backspace": deleteSelected(); e.preventDefault(); return;
+    case "d": if (e.ctrlKey) { duplicateSelected(); e.preventDefault(); } return;
     default: return;
   }
-
-  updateProps();
-  draw();
+  updateProps(); draw();
 }
 
 // =====================================================
-//  PROPERTIES PANEL
+//  UNDO
+// =====================================================
+function pushUndo() {
+  // Save snapshot of current state
+  undoStack.push({
+    tileMap: JSON.parse(JSON.stringify(tileMap)),
+    sceneObjs: JSON.parse(JSON.stringify(sceneObjs))
+  });
+  if (undoStack.length > 30) undoStack.shift(); // cap at 30
+}
+
+function undo() {
+  if (undoStack.length === 0) return;
+  var snap = undoStack.pop();
+  tileMap = snap.tileMap;
+  sceneObjs = snap.sceneObjs;
+  // Restore nextId
+  var maxId = 0;
+  sceneObjs.forEach(function(o) { if (o.id > maxId) maxId = o.id; });
+  nextId = maxId + 1;
+  selectedId = null;
+  updateProps(); updateObjList(); draw();
+}
+
+// =====================================================
+//  PROPERTIES
 // =====================================================
 function updateProps() {
   var none = document.getElementById("prop-none");
   var fields = document.getElementById("prop-fields");
-
-  if (!selectedId) {
-    none.style.display = "block";
-    fields.style.display = "none";
-    return;
-  }
-
+  if (!selectedId) { none.style.display = "block"; fields.style.display = "none"; return; }
   var obj = sceneObjs.find(function(o) { return o.id === selectedId; });
-  if (!obj) {
-    none.style.display = "block";
-    fields.style.display = "none";
-    return;
-  }
-
-  none.style.display = "none";
-  fields.style.display = "block";
-
+  if (!obj) { none.style.display = "block"; fields.style.display = "none"; return; }
+  none.style.display = "none"; fields.style.display = "block";
   document.getElementById("prop-x").value = obj.x;
   document.getElementById("prop-y").value = obj.y;
   document.getElementById("prop-scale").value = obj.scale;
@@ -830,14 +927,12 @@ function onPropChange() {
   if (!selectedId) return;
   var obj = sceneObjs.find(function(o) { return o.id === selectedId; });
   if (!obj) return;
-
   obj.x = parseInt(document.getElementById("prop-x").value) || 0;
   obj.y = parseInt(document.getElementById("prop-y").value) || 0;
   obj.scale = parseFloat(document.getElementById("prop-scale").value) || 1;
   obj.alpha = parseFloat(document.getElementById("prop-alpha").value) || 1;
   obj.flipX = document.getElementById("prop-flipx").checked;
   obj.layer = parseInt(document.getElementById("prop-layer").value);
-
   draw();
 }
 
@@ -845,21 +940,18 @@ function duplicateSelected() {
   if (!selectedId) return;
   var obj = sceneObjs.find(function(o) { return o.id === selectedId; });
   if (!obj) return;
-
-  var dup = Object.assign({}, obj);
-  dup.id = nextId++;
-  dup.x += 20;
-  dup.y += 20;
-  sceneObjs.push(dup);
-  selectedId = dup.id;
+  pushUndo();
+  var dup = JSON.parse(JSON.stringify(obj));
+  dup.id = nextId++; dup.x += gridSize; dup.y += gridSize;
+  sceneObjs.push(dup); selectedId = dup.id;
   updateProps(); updateObjList(); draw();
 }
 
 function deleteSelected() {
   if (!selectedId) return;
+  pushUndo();
   sceneObjs = sceneObjs.filter(function(o) { return o.id !== selectedId; });
-  selectedId = null;
-  updateProps(); updateObjList(); draw();
+  selectedId = null; updateProps(); updateObjList(); draw();
 }
 
 // =====================================================
@@ -867,37 +959,27 @@ function deleteSelected() {
 // =====================================================
 function updateObjList() {
   var list = document.getElementById("obj-list");
+  document.getElementById("obj-count").textContent = sceneObjs.length;
   list.innerHTML = "";
-
-  // Sort by layer for the list
   var sorted = sceneObjs.slice().sort(function(a, b) { return a.layer - b.layer; });
-
   sorted.forEach(function(obj) {
     var item = document.createElement("div");
     item.className = "layer-item" + (obj.id === selectedId ? " selected" : "");
-
-    var layerNames = ["BK", "MD", "FR"];
+    var ln = ["BK","MD","FR"];
     var info = document.createElement("span");
-    info.textContent = "[" + layerNames[obj.layer] + "] " + obj.key + " (" + obj.x + "," + obj.y + ")";
-
+    info.textContent = "[" + ln[obj.layer] + "] " + obj.key;
     var del = document.createElement("span");
-    del.className = "del-btn";
-    del.textContent = "x";
-    del.addEventListener("click", function(e) {
-      e.stopPropagation();
+    del.className = "del-btn"; del.textContent = "x";
+    del.addEventListener("click", function(ev) {
+      ev.stopPropagation(); pushUndo();
       sceneObjs = sceneObjs.filter(function(o) { return o.id !== obj.id; });
       if (selectedId === obj.id) selectedId = null;
       updateProps(); updateObjList(); draw();
     });
-
-    item.appendChild(info);
-    item.appendChild(del);
-
+    item.appendChild(info); item.appendChild(del);
     item.addEventListener("click", function() {
-      selectedId = obj.id;
-      updateProps(); updateObjList(); draw();
+      selectedId = obj.id; updateProps(); updateObjList(); draw();
     });
-
     list.appendChild(item);
   });
 }
@@ -907,17 +989,14 @@ function updateObjList() {
 // =====================================================
 function exportJSON() {
   var data = {
-    sceneW: sceneW,
-    sceneH: sceneH,
-    bgColor: bgColor,
+    gridSize: gridSize, bgColor: bgColor,
+    tiles: tileMap,
     objects: sceneObjs.map(function(o) {
       return { key: o.key, x: o.x, y: o.y, scale: o.scale, alpha: o.alpha, flipX: o.flipX, layer: o.layer };
     })
   };
   var json = JSON.stringify(data, null, 2);
   document.getElementById("export-json").value = json;
-
-  // Also copy to clipboard
   navigator.clipboard.writeText(json).catch(function() {});
 }
 
@@ -926,72 +1005,60 @@ function importJSON() {
   if (!json) return;
   try {
     var data = JSON.parse(json);
-    if (data.sceneW) { sceneW = data.sceneW; document.getElementById("tb-width").value = sceneW; }
-    if (data.sceneH) { sceneH = data.sceneH; document.getElementById("tb-height").value = sceneH; }
+    pushUndo();
+    if (data.gridSize) { gridSize = data.gridSize; document.getElementById("tb-gridsize").value = gridSize; }
     if (data.bgColor) { bgColor = data.bgColor; document.getElementById("tb-bgcolor").value = bgColor; }
-    resizeCanvas();
-
+    tileMap = data.tiles || {};
     sceneObjs = [];
     if (data.objects) {
       data.objects.forEach(function(o) {
         sceneObjs.push({
-          id: nextId++,
-          key: o.key,
-          src: srcMap[o.key] || "",
-          x: o.x, y: o.y,
-          scale: o.scale || 1,
-          alpha: o.alpha !== undefined ? o.alpha : 1,
-          flipX: o.flipX || false,
-          layer: o.layer || 1
+          id: nextId++, key: o.key, src: srcMap[o.key] || "",
+          x: o.x, y: o.y, scale: o.scale || 1, alpha: o.alpha !== undefined ? o.alpha : 1,
+          flipX: o.flipX || false, layer: o.layer || 1
         });
       });
     }
-    selectedId = null;
-    updateProps(); updateObjList(); draw();
-  } catch(e) {
-    alert("Invalid JSON: " + e.message);
-  }
+    selectedId = null; updateProps(); updateObjList(); draw();
+  } catch(ex) { alert("Invalid JSON: " + ex.message); }
 }
 
-// Auto-save to localStorage
-setInterval(function() {
+// =====================================================
+//  LOCAL STORAGE
+// =====================================================
+function saveToStorage() {
   try {
-    var data = {
-      sceneW: sceneW, sceneH: sceneH, bgColor: bgColor,
+    localStorage.setItem("is3_scene_v2", JSON.stringify({
+      gridSize: gridSize, bgColor: bgColor, cam: cam,
+      tiles: tileMap,
       objects: sceneObjs.map(function(o) {
         return { key: o.key, x: o.x, y: o.y, scale: o.scale, alpha: o.alpha, flipX: o.flipX, layer: o.layer };
       })
-    };
-    localStorage.setItem("is3_scene_editor", JSON.stringify(data));
-  } catch(e) {}
-}, 3000);
+    }));
+  } catch(ex) {}
+}
 
-// Load from localStorage on boot
-window.addEventListener("DOMContentLoaded", function() {
+function loadFromStorage() {
   try {
-    var saved = localStorage.getItem("is3_scene_editor");
-    if (saved) {
-      var data = JSON.parse(saved);
-      if (data.sceneW) { sceneW = data.sceneW; document.getElementById("tb-width").value = sceneW; }
-      if (data.sceneH) { sceneH = data.sceneH; document.getElementById("tb-height").value = sceneH; }
-      if (data.bgColor) { bgColor = data.bgColor; document.getElementById("tb-bgcolor").value = bgColor; }
-      resizeCanvas();
-      if (data.objects) {
-        data.objects.forEach(function(o) {
-          sceneObjs.push({
-            id: nextId++, key: o.key, src: srcMap[o.key] || "",
-            x: o.x, y: o.y, scale: o.scale || 1,
-            alpha: o.alpha !== undefined ? o.alpha : 1,
-            flipX: o.flipX || false, layer: o.layer || 1
-          });
+    var saved = localStorage.getItem("is3_scene_v2");
+    if (!saved) return;
+    var data = JSON.parse(saved);
+    if (data.gridSize) { gridSize = data.gridSize; document.getElementById("tb-gridsize").value = gridSize; }
+    if (data.bgColor) { bgColor = data.bgColor; document.getElementById("tb-bgcolor").value = bgColor; }
+    if (data.cam) cam = data.cam;
+    tileMap = data.tiles || {};
+    if (data.objects) {
+      data.objects.forEach(function(o) {
+        sceneObjs.push({
+          id: nextId++, key: o.key, src: srcMap[o.key] || "",
+          x: o.x, y: o.y, scale: o.scale || 1, alpha: o.alpha !== undefined ? o.alpha : 1,
+          flipX: o.flipX || false, layer: o.layer || 1
         });
-      }
-      updateObjList();
-      setTimeout(draw, 500);
+      });
     }
-  } catch(e) {}
-});
+    updateObjList();
+  } catch(ex) {}
+}
 </script>
-
 </body>
 </html>
