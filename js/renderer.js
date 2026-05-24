@@ -148,13 +148,23 @@ var Renderer = (function () {
       worldX += scrollSpeed;
       playerBob += 0.1;
     } else if (state === "approaching") {
-      scrollSpeed *= 0.96;
+      // Keep moving toward the enemy at walk speed, slow down only when close
+      var enemyScreen = enemyWorldX - worldX;
+      var distToStop = W * 0.62; // where enemy should be when we stop
+      var gap = enemyScreen - distToStop;
+
+      if (gap > 100) {
+        // Still far away — walk at full speed
+        scrollSpeed += (WALK_SPEED - scrollSpeed) * 0.06;
+      } else {
+        // Close — decelerate smoothly
+        scrollSpeed = WALK_SPEED * (gap / 100);
+      }
+      if (scrollSpeed < 0.2) scrollSpeed = 0.2; // minimum so we always get there
       worldX += scrollSpeed;
       playerBob += 0.07;
 
-      // Stop when enemy is at about 68% screen width
-      var enemyScreen = enemyWorldX - worldX;
-      if (enemyScreen <= W * 0.62) {
+      if (gap <= 2) {
         scrollSpeed = 0;
         state = "fighting";
       }

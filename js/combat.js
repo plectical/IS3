@@ -169,16 +169,17 @@ var Combat = (function () {
     if (!enemy) return;
 
     // --- PLAYER ATTACKS ---
+    // Calculate damage with variance, then apply to enemy directly
     var rawDmg = Math.max(1, ps.atk - enemy.def);
-    // +/- 20% variance
-    var variance = 0.8 + Math.random() * 0.4;
+    var variance = 0.8 + Math.random() * 0.4; // +/- 20%
     var finalDmg = Math.max(1, Math.floor(rawDmg * variance));
 
-    // Apply damage (pass raw atk so enemy.takeDamage applies def internally)
-    // Actually enemy.takeDamage already subtracts def, so pass ps.atk
-    var enemyDied = Enemy.takeDamage(ps.atk);
+    // Subtract HP directly (don't use Enemy.takeDamage which double-subtracts def)
+    enemy.hp -= finalDmg;
+    var enemyDied = enemy.hp <= 0;
+    if (enemy.hp < 0) enemy.hp = 0;
 
-    // Tell renderer to animate and show the actual damage dealt
+    // Tell renderer to animate and show the damage dealt
     Renderer.animatePlayerAttack(finalDmg);
     emit("player_attack", { damage: finalDmg });
 
@@ -189,8 +190,10 @@ var Combat = (function () {
     }
 
     // --- ENEMY ATTACKS (same tick, slight conceptual delay) ---
-    var playerDied = Player.takeDamage(enemy.atk);
+    // Player.takeDamage subtracts def internally, so pass raw atk
     var actualDmg = Math.max(1, enemy.atk - ps.def);
+    Player.takeDamage(enemy.atk);
+    var playerDied = ps.hp <= 0;
     Renderer.animateEnemyAttack(actualDmg);
     emit("enemy_attack", { damage: actualDmg });
 

@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IS3 Asset Viewer</title>
+  <style>
+    /* Dark background so pixel art pops */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #111;
+      color: #ddd;
+      font-family: 'Courier New', monospace;
+      padding: 20px;
+    }
+    h1 { color: #ffd700; margin-bottom: 10px; font-size: 20px; }
+    h2 { color: #88aaff; margin: 20px 0 8px; font-size: 16px; border-bottom: 1px solid #333; padding-bottom: 4px; }
+    h3 { color: #8f8; margin: 14px 0 6px; font-size: 13px; }
+
+    /* Each asset shown as a card with the image + its filename */
+    .asset-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .asset-card {
+      background: #1a1a2a;
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .asset-card:hover { border-color: #ffd700; }
+    .asset-card.selected { border-color: #4f4; border-width: 2px; }
+    .asset-card img {
+      image-rendering: pixelated;
+      display: block;
+      margin: 0 auto 4px;
+    }
+    .asset-card .label {
+      font-size: 9px;
+      color: #888;
+      word-break: break-all;
+      max-width: 100px;
+    }
+    .asset-card .dims {
+      font-size: 8px;
+      color: #666;
+    }
+
+    /* Corridor preview canvas */
+    #preview-section {
+      margin-top: 30px;
+      border: 1px solid #444;
+      border-radius: 6px;
+      padding: 12px;
+      background: #0a0a15;
+    }
+    #preview-section h2 { margin-top: 0; }
+    #corridorCanvas {
+      display: block;
+      width: 100%;
+      height: 300px;
+      image-rendering: pixelated;
+      border: 1px solid #333;
+      margin-top: 8px;
+    }
+
+    /* Controls for the preview */
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 10px 0;
+      align-items: center;
+    }
+    .controls label { font-size: 11px; color: #aaa; }
+    .controls select, .controls input {
+      background: #222;
+      color: #ddd;
+      border: 1px solid #444;
+      padding: 4px 8px;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      border-radius: 3px;
+    }
+    .controls input[type="range"] { width: 120px; }
+    .val { font-size: 10px; color: #ffd700; min-width: 30px; display: inline-block; }
+  </style>
+</head>
+<body>
+
+<h1>IS3 Asset Viewer & Corridor Layout Tool</h1>
+<p style="font-size:11px;color:#888;margin-bottom:16px;">
+  Click assets to see their actual size. Use the corridor preview below to test how they look in-game.
+</p>
+
+<!-- All assets organized by category -->
+<div id="asset-sections"></div>
+
+<!-- Corridor preview -->
+<div id="preview-section">
+  <h2>Corridor Preview</h2>
+  <div class="controls">
+    <label>Zone:
+      <select id="ctrl-zone">
+        <option value="forest">Dark Forest</option>
+        <option value="cavern">Cavern Depths</option>
+        <option value="castle">Ruined Castle</option>
+        <option value="cemetery">Forsaken Cemetery</option>
+        <option value="hell">Infernal Pits</option>
+        <option value="cosmic">Cosmic Void</option>
+      </select>
+    </label>
+    <label>Wall Height:
+      <input type="range" id="ctrl-wallH" min="10" max="50" value="22">
+      <span class="val" id="val-wallH">22%</span>
+    </label>
+    <label>Floor Y:
+      <input type="range" id="ctrl-floorY" min="40" max="80" value="60">
+      <span class="val" id="val-floorY">60%</span>
+    </label>
+    <label>Tile Size:
+      <input type="range" id="ctrl-tileSize" min="32" max="128" value="64">
+      <span class="val" id="val-tileSize">64</span>
+    </label>
+    <label>Deco Scale:
+      <input type="range" id="ctrl-decoScale" min="50" max="300" value="150">
+      <span class="val" id="val-decoScale">1.5x</span>
+    </label>
+    <label>Deco Opacity:
+      <input type="range" id="ctrl-decoAlpha" min="10" max="100" value="75">
+      <span class="val" id="val-decoAlpha">75%</span>
+    </label>
+    <label>Sprite Scale:
+      <input type="range" id="ctrl-spriteScale" min="100" max="400" value="280">
+      <span class="val" id="val-spriteScale">2.8x</span>
+    </label>
+  </div>
+  <canvas id="corridorCanvas"></canvas>
+</div>
+
+<script>
+/**
+ * Asset definitions — every asset in the game organized by category.
+ * Each entry: { key: "display_name", src: "path/to/file.png" }
+ */
+var ASSETS = {
+  "Heroes": [
+    { key: "knight",      src: "assets/heroes/Knight 64x96.png" },
+    { key: "warrior",     src: "assets/heroes/Warrior 64x96.png" },
+    { key: "archer",      src: "assets/heroes/Archer 64x96.png" },
+    { key: "assassin",    src: "assets/heroes/Assassin 64x96.png" },
+    { key: "cleric",      src: "assets/heroes/Cleric 64x96.png" },
+    { key: "necromancer", src: "assets/heroes/Necromancer 64x96.png" }
+  ],
+  "Enemies (Forest/Cavern)": [
+    { key: "slime",    src: "assets/enemies/Slime 64x96.png" },
+    { key: "rat",      src: "assets/enemies/Rat 64x96.png" },
+    { key: "snake",    src: "assets/enemies/Snake 64x96.png" },
+    { key: "spider",   src: "assets/enemies/Spider 64x96.png" },
+    { key: "wolf",     src: "assets/enemies/Wolf 64x96.png" },
+    { key: "goblin",   src: "assets/enemies/Goblin 64x96.png" },
+    { key: "kobold",   src: "assets/enemies/Kobold 64x96.png" },
+    { key: "skeleton", src: "assets/enemies/Skeleton 64x96.png" }
+  ],
+  "Enemies (Castle/Cemetery)": [
+    { key: "skeleton_knight", src: "assets/enemies/Skeleton Knight 64x96.png" },
+    { key: "skeleton_mage",   src: "assets/enemies/Skeleton Mage 64x96.png" },
+    { key: "ghoul",           src: "assets/enemies/Ghoul 64x96.png" },
+    { key: "orc",             src: "assets/enemies/Orc 64x96.png" },
+    { key: "minotaur",        src: "assets/enemies/Minotaur 64x96.png" },
+    { key: "guardian",        src: "assets/enemies/Guardian 64x96.png" },
+    { key: "wraith",          src: "assets/enemies/Wraith 64x96.png" },
+    { key: "undead_hound",    src: "assets/enemies/Undead Hound 64x96.png" },
+    { key: "living_shadow",   src: "assets/enemies/Living Shadow 64x96.png" },
+    { key: "warlock",         src: "assets/enemies/Warlock 64x96.png" }
+  ],
+  "Enemies (Hell/Cosmic)": [
+    { key: "hell_hound",     src: "assets/enemies/Hell Hound 64x96.png" },
+    { key: "fire_golem",     src: "assets/enemies/Fire Golem 64x96.png" },
+    { key: "succubus",       src: "assets/enemies/Succubus 64x96.png" },
+    { key: "raging_demon",   src: "assets/enemies/Raging Demon 64x96.png" },
+    { key: "berserker",      src: "assets/enemies/Berserker 64x96.png" },
+    { key: "cyclops",        src: "assets/enemies/Cyclops 64x96.png" },
+    { key: "mind_flayer",    src: "assets/enemies/Mind Flayer 64x96.png" },
+    { key: "elder_lich",     src: "assets/enemies/Elder Lich 64x96.png" },
+    { key: "beholder",       src: "assets/enemies/Beholder 64x96.png" },
+    { key: "emerald_dragon", src: "assets/enemies/Emerald Dragon 64x96.png" },
+    { key: "annihilator",    src: "assets/enemies/Annihilator 64x96.png" },
+    { key: "manticore",      src: "assets/enemies/Manticore 64x96.png" }
+  ],
+  "Bosses": [
+    { key: "boss_forest_spirit", src: "assets/bosses/Spirit of the Forest 128x160.png" },
+    { key: "boss_chimera",       src: "assets/bosses/Chimera 128x128.png" },
+    { key: "boss_king",          src: "assets/bosses/The King.png" },
+    { key: "boss_death",         src: "assets/bosses/Death 128x128.png" },
+    { key: "boss_balrog",        src: "assets/bosses/Infernal Balrog 128x128.png" },
+    { key: "boss_nightmare",     src: "assets/bosses/Unending Nightmare 128x128.png" },
+    { key: "boss_dragon_king",   src: "assets/bosses/Dragon King 128x128.png" },
+    { key: "boss_behemoth",      src: "assets/bosses/Behemoth Wyrm 128x128.png" },
+    { key: "boss_leviathan",     src: "assets/bosses/Leviathan 128x128.png" }
+  ],
+  "Forest Tiles": [
+    { key: "tile_forest_01", src: "assets/tilesets/forest/Forest Floor Tile 01.png" },
+    { key: "tile_forest_02", src: "assets/tilesets/forest/Forest Floor Tile 02.png" },
+    { key: "tile_forest_03", src: "assets/tilesets/forest/Forest Floor Tile 03.png" },
+    { key: "tree_01",        src: "assets/tilesets/forest/Tree Tile 01.png" },
+    { key: "tree_02",        src: "assets/tilesets/forest/Tree Tile 02.png" },
+    { key: "tree_03",        src: "assets/tilesets/forest/Tree Tile 03.png" },
+    { key: "tree_04",        src: "assets/tilesets/forest/Tree Tile 04.png" },
+    { key: "grass_01",       src: "assets/tilesets/forest/Grass Tile 01.png" },
+    { key: "grass_02",       src: "assets/tilesets/forest/Grass Tile 02.png" },
+    { key: "forest_rock_01", src: "assets/tilesets/forest/Forest Rock Tile 01.png" },
+    { key: "forest_rock_02", src: "assets/tilesets/forest/Forest Rock Tile 02.png" }
+  ],
+  "Castle Tiles": [
+    { key: "tile_castle_01",       src: "assets/tilesets/castle/Floor Tile 01.png" },
+    { key: "tile_castle_02",       src: "assets/tilesets/castle/Floor Tile 02.png" },
+    { key: "tile_castle_03",       src: "assets/tilesets/castle/Floor Tile 03.png" },
+    { key: "castle_wall_left_01",  src: "assets/tilesets/castle/Left Wall Tile 01.png" },
+    { key: "castle_wall_left_02",  src: "assets/tilesets/castle/Left Wall Tile 02.png" },
+    { key: "castle_sconce_left",   src: "assets/tilesets/castle/Left Sconce Wall Tile.png" },
+    { key: "castle_wall_right_01", src: "assets/tilesets/castle/Right Wall Tile 01.png" },
+    { key: "castle_column",        src: "assets/tilesets/castle/Column Tile.png" },
+    { key: "castle_column_02",     src: "assets/tilesets/castle/Column Tile 02.png" }
+  ],
+  "Cavern Tiles": [
+    { key: "tile_cavern_01",       src: "assets/tilesets/cavern/Cavern Floor Tile 01.png" },
+    { key: "tile_cavern_02",       src: "assets/tilesets/cavern/Cavern Floor Tile 02.png" },
+    { key: "cavern_wall_mid",      src: "assets/tilesets/cavern/Cavern Wall Middle.png" },
+    { key: "cavern_wall_top_left", src: "assets/tilesets/cavern/Cavern Wall Top Left.png" },
+    { key: "cavern_stalagmite_01", src: "assets/tilesets/cavern/Cavern Stalagmite Tile 01.png" },
+    { key: "cavern_stalagmite_02", src: "assets/tilesets/cavern/Cavern Stalagmite Tile 02.png" }
+  ],
+  "Cemetery Tiles": [
+    { key: "tile_cemetery_01",  src: "assets/tilesets/cemetery/Cemetery Floor Tile 01.png" },
+    { key: "tile_cemetery_02",  src: "assets/tilesets/cemetery/Cemetery Floor Tile 02.png" },
+    { key: "cemetery_grave_01", src: "assets/tilesets/cemetery/Cemetery Gravestone 01.png" },
+    { key: "cemetery_grave_02", src: "assets/tilesets/cemetery/Cemetery Gravestone 02.png" },
+    { key: "cemetery_tree_01",  src: "assets/tilesets/cemetery/Cemetery Tree 1.png" },
+    { key: "cemetery_tree_02",  src: "assets/tilesets/cemetery/Cemetery Tree 02.png" },
+    { key: "cemetery_fence_col",src: "assets/tilesets/cemetery/Cemetery Fence Column.png" }
+  ],
+  "Hell Tiles": [
+    { key: "tile_hell_01",  src: "assets/tilesets/hell/Hell Floor Tile 01.png" },
+    { key: "tile_hell_02",  src: "assets/tilesets/hell/Hell Floor Tile 02.png" },
+    { key: "hell_column",   src: "assets/tilesets/hell/Hell Column.png" },
+    { key: "hell_spire_01", src: "assets/tilesets/hell/Hell Spire 01.png" },
+    { key: "hell_spire_02", src: "assets/tilesets/hell/Hell Spire 02.png" },
+    { key: "hell_bone_01",  src: "assets/tilesets/hell/Hell Bone Pile 01.png" },
+    { key: "hell_bone_02",  src: "assets/tilesets/hell/Hell Bone Pile 02.png" },
+    { key: "hell_torch",    src: "assets/tilesets/hell/Hell Torch.png" },
+    { key: "hell_lava_01",  src: "assets/tilesets/hell/Hell Lava 01.png" },
+    { key: "hell_lava_02",  src: "assets/tilesets/hell/Hell Lava 02.png" }
+  ],
+  "Cosmic Tiles": [
+    { key: "tile_cosmic_01",  src: "assets/tilesets/cosmic/Cosmic Floor Tile 01.png" },
+    { key: "tile_cosmic_02",  src: "assets/tilesets/cosmic/Cosmic Floor Tile 02.png" },
+    { key: "cosmic_wall_01",  src: "assets/tilesets/cosmic/Cosmic Wall 01.png" },
+    { key: "cosmic_wall_02",  src: "assets/tilesets/cosmic/Cosmic Wall 02.png" },
+    { key: "cosmic_wall_03",  src: "assets/tilesets/cosmic/Cosmic Wall 03.png" },
+    { key: "cosmic_light_01", src: "assets/tilesets/cosmic/Cosmic Light 01.png" },
+    { key: "cosmic_light_02", src: "assets/tilesets/cosmic/Cosmic Light 02.png" }
+  ],
+  "Overworld Tiles": [
+    { key: "tile_overworld_01",    src: "assets/tilesets/overworld/Overworld Floor 01.png" },
+    { key: "tile_overworld_02",    src: "assets/tilesets/overworld/Overworld Floor 02.png" },
+    { key: "overworld_wall_mid_01",src: "assets/tilesets/overworld/Overworld Wall Middle 01.png" },
+    { key: "overworld_rocks_01",   src: "assets/tilesets/overworld/Overworld Rocks 01.png" },
+    { key: "overworld_rocks_02",   src: "assets/tilesets/overworld/Overworld Rocks 02.png" }
+  ]
+};
+
+// Zone configs matching gameData.js — used for corridor preview
+var ZONES = {
+  forest:   { tiles: ["tile_forest_01","tile_forest_02","tile_forest_03"], wallsTop: ["tree_01","tree_02","tree_03","tree_04"], wallsBottom: ["grass_01","grass_02","forest_rock_01","forest_rock_02"], sky: ["#0d1f0d","#1a2a1a"] },
+  cavern:   { tiles: ["tile_cavern_01","tile_cavern_02"], wallsTop: ["cavern_wall_mid","cavern_wall_top_left"], wallsBottom: ["cavern_stalagmite_01","cavern_stalagmite_02"], sky: ["#0d0d1f","#1a1a2a"] },
+  castle:   { tiles: ["tile_castle_01","tile_castle_02","tile_castle_03"], wallsTop: ["castle_wall_left_01","castle_wall_left_02","castle_sconce_left"], wallsBottom: ["castle_column","castle_column_02"], sky: ["#111111","#2a2a2a"] },
+  cemetery: { tiles: ["tile_cemetery_01","tile_cemetery_02"], wallsTop: ["cemetery_tree_01","cemetery_tree_02","cemetery_fence_col"], wallsBottom: ["cemetery_grave_01","cemetery_grave_02"], sky: ["#0f0d1a","#1f1a2a"] },
+  hell:     { tiles: ["tile_hell_01","tile_hell_02"], wallsTop: ["hell_spire_01","hell_spire_02","hell_torch"], wallsBottom: ["hell_bone_01","hell_bone_02","hell_column"], sky: ["#1a0505","#2a1010"] },
+  cosmic:   { tiles: ["tile_cosmic_01","tile_cosmic_02"], wallsTop: ["cosmic_wall_01","cosmic_wall_02","cosmic_wall_03"], wallsBottom: ["cosmic_light_01","cosmic_light_02"], sky: ["#050520","#0a0a2a"] }
+};
+
+// Loaded images cache
+var loadedImages = {};
+
+// Build a flat lookup: key → src
+var srcLookup = {};
+for (var cat in ASSETS) {
+  ASSETS[cat].forEach(function(a) { srcLookup[a.key] = a.src; });
+}
+
+/**
+ * Load an image by key, return from cache if already loaded.
+ */
+function getImg(key) {
+  if (loadedImages[key]) return loadedImages[key];
+  var src = srcLookup[key];
+  if (!src) return null;
+  var img = new Image();
+  img.src = src;
+  loadedImages[key] = img;
+  return img;
+}
+
+/**
+ * Build the asset grid sections in the page.
+ */
+function buildAssetSections() {
+  var container = document.getElementById("asset-sections");
+
+  for (var category in ASSETS) {
+    var h2 = document.createElement("h2");
+    h2.textContent = category;
+    container.appendChild(h2);
+
+    var grid = document.createElement("div");
+    grid.className = "asset-grid";
+
+    ASSETS[category].forEach(function(asset) {
+      var card = document.createElement("div");
+      card.className = "asset-card";
+
+      var img = document.createElement("img");
+      img.src = asset.src;
+      // Show at 2x for visibility but cap at 160px
+      img.onload = function() {
+        var scale = 2;
+        var w = this.naturalWidth * scale;
+        var h = this.naturalHeight * scale;
+        if (w > 160) { scale = 160 / this.naturalWidth; w = 160; h = this.naturalHeight * scale; }
+        this.width = w;
+        this.height = h;
+        // Update dims label
+        var dims = card.querySelector('.dims');
+        if (dims) dims.textContent = this.naturalWidth + "x" + this.naturalHeight;
+      };
+
+      var label = document.createElement("div");
+      label.className = "label";
+      label.textContent = asset.key;
+
+      var dims = document.createElement("div");
+      dims.className = "dims";
+      dims.textContent = "...";
+
+      card.appendChild(img);
+      card.appendChild(label);
+      card.appendChild(dims);
+      grid.appendChild(card);
+    });
+
+    container.appendChild(grid);
+  }
+}
+
+/**
+ * Draw the corridor preview canvas using current control settings.
+ */
+function drawCorridor() {
+  var canvas = document.getElementById("corridorCanvas");
+  var ctx = canvas.getContext("2d");
+
+  // Size canvas to its CSS size
+  var rect = canvas.getBoundingClientRect();
+  var W = rect.width;
+  var H = rect.height;
+  canvas.width = W * 2;
+  canvas.height = H * 2;
+  ctx.setTransform(2, 0, 0, 2, 0, 0);
+
+  // Read control values
+  var zoneId = document.getElementById("ctrl-zone").value;
+  var wallPct = parseInt(document.getElementById("ctrl-wallH").value);
+  var floorPct = parseInt(document.getElementById("ctrl-floorY").value);
+  var tileSize = parseInt(document.getElementById("ctrl-tileSize").value);
+  var decoScale = parseInt(document.getElementById("ctrl-decoScale").value) / 100;
+  var decoAlpha = parseInt(document.getElementById("ctrl-decoAlpha").value) / 100;
+  var spriteScale = parseInt(document.getElementById("ctrl-spriteScale").value) / 100;
+
+  // Update labels
+  document.getElementById("val-wallH").textContent = wallPct + "%";
+  document.getElementById("val-floorY").textContent = floorPct + "%";
+  document.getElementById("val-tileSize").textContent = tileSize;
+  document.getElementById("val-decoScale").textContent = decoScale.toFixed(1) + "x";
+  document.getElementById("val-decoAlpha").textContent = Math.round(decoAlpha * 100) + "%";
+  document.getElementById("val-spriteScale").textContent = spriteScale.toFixed(1) + "x";
+
+  var zone = ZONES[zoneId];
+  var WALL_H = Math.floor(H * wallPct / 100);
+  var FLOOR_Y = Math.floor(H * floorPct / 100);
+  var FLOOR_H = H - FLOOR_Y;
+  var ACTION_Y = FLOOR_Y - 10;
+
+  // --- SKY/WALL ---
+  var grad = ctx.createLinearGradient(0, 0, 0, FLOOR_Y);
+  grad.addColorStop(0, zone.sky[0]);
+  grad.addColorStop(1, zone.sky[1]);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, FLOOR_Y);
+
+  // Wall/floor edge line
+  ctx.fillStyle = "rgba(255,255,255,0.06)";
+  ctx.fillRect(0, FLOOR_Y - 2, W, 2);
+
+  // --- TOP DECORATIONS ---
+  if (zone.wallsTop.length > 0) {
+    var spacing = 130;
+    for (var x = 30; x < W; x += spacing) {
+      var key = zone.wallsTop[Math.floor(x / spacing) % zone.wallsTop.length];
+      var img = getImg(key);
+      if (img && img.complete && img.naturalWidth) {
+        var dw = img.naturalWidth * decoScale;
+        var dh = img.naturalHeight * decoScale;
+        var dy = FLOOR_Y - dh;
+        ctx.globalAlpha = decoAlpha;
+        ctx.drawImage(img, x - dw/2, dy, dw, dh);
+        ctx.globalAlpha = 1;
+      }
+    }
+  }
+
+  // Depth gradient at bottom of wall
+  var depthGrad = ctx.createLinearGradient(0, FLOOR_Y - 40, 0, FLOOR_Y);
+  depthGrad.addColorStop(0, "rgba(0,0,0,0)");
+  depthGrad.addColorStop(1, "rgba(0,0,0,0.3)");
+  ctx.fillStyle = depthGrad;
+  ctx.fillRect(0, FLOOR_Y - 40, W, 40);
+
+  // --- FLOOR TILES ---
+  var cols = Math.ceil(W / tileSize) + 1;
+  var rows = Math.ceil(FLOOR_H / tileSize) + 1;
+  for (var row = 0; row < rows; row++) {
+    for (var col = 0; col < cols; col++) {
+      var tIdx = ((row * 7 + col * 13) % zone.tiles.length + zone.tiles.length) % zone.tiles.length;
+      var tImg = getImg(zone.tiles[tIdx]);
+      if (tImg && tImg.complete && tImg.naturalWidth) {
+        ctx.drawImage(tImg, col * tileSize, FLOOR_Y + row * tileSize, tileSize, tileSize);
+      } else {
+        ctx.fillStyle = (row+col)%2===0 ? "#2a2a3e" : "#22223a";
+        ctx.fillRect(col * tileSize, FLOOR_Y + row * tileSize, tileSize, tileSize);
+      }
+    }
+  }
+
+  // Floor shadow
+  var fGrad = ctx.createLinearGradient(0, FLOOR_Y, 0, FLOOR_Y + 25);
+  fGrad.addColorStop(0, "rgba(0,0,0,0.35)");
+  fGrad.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = fGrad;
+  ctx.fillRect(0, FLOOR_Y, W, 25);
+
+  // --- BOTTOM DECORATIONS ---
+  if (zone.wallsBottom.length > 0) {
+    var bSpacing = 160;
+    for (var bx = 80; bx < W; bx += bSpacing) {
+      var bKey = zone.wallsBottom[Math.floor(bx / bSpacing) % zone.wallsBottom.length];
+      var bImg = getImg(bKey);
+      if (bImg && bImg.complete && bImg.naturalWidth) {
+        var bdw = bImg.naturalWidth * decoScale;
+        var bdh = bImg.naturalHeight * decoScale;
+        var bdy = FLOOR_Y - bdh * 0.4;
+        ctx.globalAlpha = 0.5;
+        ctx.drawImage(bImg, bx - bdw/2, bdy, bdw, bdh);
+        ctx.globalAlpha = 1;
+      }
+    }
+  }
+
+  // --- HERO SPRITE ---
+  var heroImg = getImg("knight");
+  if (heroImg && heroImg.complete && heroImg.naturalWidth) {
+    var hsw = 64 * spriteScale;
+    var hsh = 96 * spriteScale;
+    var hx = W * 0.25 - hsw/2;
+    var hy = ACTION_Y - hsh;
+
+    // Shadow
+    ctx.fillStyle = "rgba(0,0,0,0.4)";
+    ctx.beginPath();
+    ctx.ellipse(W * 0.25, ACTION_Y + 2, hsw * 0.28, 7, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.drawImage(heroImg, hx, hy, hsw, hsh);
+
+    // Label
+    ctx.font = "bold 11px 'Courier New'";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#ffd700";
+    ctx.shadowColor = "#000"; ctx.shadowBlur = 3;
+    ctx.fillText("Lv1 Knight", W * 0.25, ACTION_Y + 18);
+    ctx.shadowBlur = 0;
+  }
+
+  // --- ENEMY SPRITE ---
+  var enemies = { forest: "goblin", cavern: "orc", castle: "minotaur", cemetery: "wraith", hell: "raging_demon", cosmic: "beholder" };
+  var eKey = enemies[zoneId] || "slime";
+  var eImg = getImg(eKey);
+  if (eImg && eImg.complete && eImg.naturalWidth) {
+    var esw = 64 * spriteScale;
+    var esh = 96 * spriteScale;
+    var ex = W * 0.68;
+
+    // Shadow
+    ctx.fillStyle = "rgba(0,0,0,0.4)";
+    ctx.beginPath();
+    ctx.ellipse(ex, ACTION_Y + 2, esw * 0.28, 7, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Flip enemy
+    ctx.save();
+    ctx.translate(ex - esw/2 + esw, ACTION_Y - esh);
+    ctx.scale(-1, 1);
+    ctx.drawImage(eImg, 0, 0, esw, esh);
+    ctx.restore();
+
+    // HP bar
+    var barW = esw * 0.75;
+    ctx.fillStyle = "#222";
+    ctx.fillRect(ex - barW/2 - 1, ACTION_Y - esh - 23, barW + 2, 10);
+    ctx.fillStyle = "rgb(40,180,40)";
+    ctx.fillRect(ex - barW/2, ACTION_Y - esh - 22, barW, 8);
+    ctx.strokeStyle = "#555";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(ex - barW/2, ACTION_Y - esh - 22, barW, 8);
+
+    // Label
+    ctx.font = "bold 11px 'Courier New'";
+    ctx.textAlign = "center";
+    ctx.fillStyle = "#ddd";
+    ctx.shadowColor = "#000"; ctx.shadowBlur = 3;
+    ctx.fillText(eKey.replace(/_/g," ") + " Lv3", ex, ACTION_Y - esh - 30);
+    ctx.shadowBlur = 0;
+  }
+
+  // --- GUIDE LINES (to show layout zones) ---
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = "rgba(255,255,0,0.2)";
+  ctx.lineWidth = 1;
+
+  // Floor Y line
+  ctx.beginPath();
+  ctx.moveTo(0, FLOOR_Y); ctx.lineTo(W, FLOOR_Y);
+  ctx.stroke();
+
+  // Action Y line
+  ctx.beginPath();
+  ctx.moveTo(0, ACTION_Y); ctx.lineTo(W, ACTION_Y);
+  ctx.stroke();
+
+  ctx.setLineDash([]);
+
+  // Labels for guide lines
+  ctx.font = "9px 'Courier New'";
+  ctx.textAlign = "left";
+  ctx.fillStyle = "rgba(255,255,0,0.4)";
+  ctx.fillText("FLOOR_Y=" + floorPct + "%", 4, FLOOR_Y - 4);
+  ctx.fillText("ACTION_Y", 4, ACTION_Y - 4);
+}
+
+// --- INIT ---
+buildAssetSections();
+
+// Preload all images then draw
+var allKeys = Object.keys(srcLookup);
+var loaded = 0;
+allKeys.forEach(function(key) {
+  var img = getImg(key);
+  img.onload = function() {
+    loaded++;
+    if (loaded >= allKeys.length) drawCorridor();
+  };
+  img.onerror = function() {
+    loaded++;
+    if (loaded >= allKeys.length) drawCorridor();
+  };
+});
+
+// Redraw when controls change
+document.querySelectorAll(".controls select, .controls input").forEach(function(el) {
+  el.addEventListener("input", drawCorridor);
+});
+
+// Also draw after a short delay in case images load fast
+setTimeout(drawCorridor, 500);
+setTimeout(drawCorridor, 1500);
+</script>
+
+</body>
+</html>
