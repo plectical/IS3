@@ -1,212 +1,272 @@
 /**
- * combat.js — Auto-fight combat loop.
- * Handles the turn-based exchange between player and enemy.
- * Produces combat events that the renderer picks up for animations.
+ * combat.js — Auto-fight combat loop tied to the walking/encounter system.
+ * When auto-fight is ON:
+ *   1. Player walks through the world
+ *   2. Enemy spawns ahead after a short walk
+ *   3. Player approaches enemy, stops, and they trade blows
+ *   4. Enemy dies → player resumes walking → repeat
  */
 
 var Combat = (function () {
 
-  // Combat state
-  var fighting = false;       // is auto-fight running?
-  var tickTimer = null;       // setInterval handle for the fight loop
-  var phase = "idle";         // "idle" | "spawning" | "player_turn" | "enemy_turn" | "victory" | "defeat"
-  var combatLog = [];         // recent combat events for the renderer to animate
-  var onEvent = null;         // callback for combat events (set by game.js)
+  var fighting = false;       // is auto-fight enabled?
+  var tickTimer = null;       // combat tick interval (only active during "fighting" state)
+  var spawnTimer = null;      // timer to spawn next enemy while walking
+  var onEvent = null;         // event callback for game.js
 
   /**
-   * Register a callback that fires on every combat event.
-   * Events: { type: "...", data: {...} }
+   * Register an event handler for combat events.
    */
   function setEventHandler(fn) {
     onEvent = fn;
   }
 
   /**
-   * Fire a combat event — pushes to log and calls the handler.
+   * Fire a combat event.
    */
   function emit(type, data) {
-    var evt = { type: type, data: data || {}, time: Date.now() };
-    combatLog.push(evt);
-    // Keep log short so it doesn't grow forever
-    if (combatLog.length > 50) combatLog.shift();
-    if (onEvent) onEvent(evt);
+    if (onEvent) onEvent({ type: type, data: data || {}, time: Date.now() });
   }
 
   /**
-   * Start auto-fighting. Spawns an enemy and begins the tick loop.
+   * Start auto-fighting. Player begins walking and encountering enemies.
    */
   function start() {
-    if (fighting) return; // already going
+    if (fighting) return;
     fighting = true;
-    phase = "spawning";
 
-    // Spawn first enemy
-    _spawnNext();
+    // Start walking and schedule the first enemy
+    Renderer.startWalking();
+    _scheduleNextEnemy();
 
-    // Start the combat tick loop
-    tickTimer = setInterval(_tick, GameData.combatTickMs);
+    // Poll renderer state to know when to start fighting
+    _startStatePoller();
+
     emit("fight_start");
   }
 
   /**
-   * Stop auto-fighting. Clears the loop.
+   * Stop auto-fighting. Player stops walking.
    */
   function stop() {
     fighting = false;
-    phase = "idle";
-    if (tickTimer) {
-      clearInterval(tickTimer);
-      tickTimer = null;
-    }
+    _clearTimers();
     emit("fight_stop");
   }
 
   /**
-   * Toggle auto-fight on/off.
+   * Toggle auto-fight.
    */
   function toggle() {
-    if (fighting) {
-      stop();
-    } else {
-      start();
-    }
+    fighting ? stop() : start();
   }
 
   /**
-   * Spawn the next enemy (regular or boss based on kill count).
+   * Clear all timers.
    */
-  function _spawnNext() {
+  function _clearTimers() {
+    if (tickTimer) { clearInterval(tickTimer); tickTimer = null; }
+    if (spawnTimer) { clearTimeout(spawnTimer); spawnTimer = null; }
+  }
+
+  /**
+   * Schedule the next enemy to spawn after a short walking delay.
+   * Gives the player time to walk through the environment between fights.
+   */
+  function _scheduleNextEnemy() {
+    if (!fighting) return;
+
+    // Random delay before next enemy (1-2.5 seconds of walking)
+    var delay = 1000 + Math.random() * 1500;
+
+    spawnTimer = setTimeout(function () {
+      if (!fighting) return;
+      _spawnEnemy();
+    }, delay);
+  }
+
+  /**
+   * Spawn an enemy and tell the renderer to place it ahead in the world.
+   */
+  function _spawnEnemy() {
     var ps = Player.getState();
 
-    // Check if it's boss time
-    if (ps.killCount > 0 && ps.killCount % GameData.killsPerBoss === 0 && !ps.bossDefeated) {
+    // Boss check: every N kills, spawn the zone boss
+    var isBoss = (ps.killCount > 0 && ps.killCount % GameData.killsPerBoss === 0 && !ps.bossDefeated);
+
+    if (isBoss) {
       Enemy.spawnBoss();
-      emit("boss_spawn", { enemy: Enemy.getCurrent() });
     } else {
       Enemy.spawnRandom();
-      emit("enemy_spawn", { enemy: Enemy.getCurrent() });
     }
 
-    phase = "player_turn";
+    var enemy = Enemy.getCurrent();
+
+    // Tell renderer to place the enemy ahead and start approaching
+    Renderer.notifyEnemySpawn(isBoss);
+
+    emit(isBoss ? "boss_spawn" : "enemy_spawn", { enemy: enemy });
   }
 
   /**
-   * One tick of combat — player hits, then enemy hits (if alive).
-   * This runs every combatTickMs.
+   * Poll the renderer state. When renderer says "fighting", start combat ticks.
+   * When renderer says "walking" (after a kill), schedule next enemy.
+   */
+  function _startStatePoller() {
+    var lastState = "";
+
+    var poller = setInterval(function () {
+      if (!fighting) {
+        clearInterval(poller);
+        return;
+      }
+
+      var rState = Renderer.getState();
+
+      // Transition: just entered "fighting" state
+      if (rState === "fighting" && lastState !== "fighting") {
+        _startCombatTicks();
+      }
+
+      // Transition: just started "walking" after a victory
+      if (rState === "walking" && lastState === "victory") {
+        _stopCombatTicks();
+        _scheduleNextEnemy();
+      }
+
+      lastState = rState;
+    }, 100); // check 10x/sec
+  }
+
+  /**
+   * Start the combat tick loop — player and enemy trade blows.
+   */
+  function _startCombatTicks() {
+    if (tickTimer) return; // already ticking
+    tickTimer = setInterval(_tick, GameData.combatTickMs);
+    // Do first tick immediately so there's no dead pause
+    _tick();
+  }
+
+  /**
+   * Stop combat ticks (between fights).
+   */
+  function _stopCombatTicks() {
+    if (tickTimer) {
+      clearInterval(tickTimer);
+      tickTimer = null;
+    }
+  }
+
+  /**
+   * One combat tick — player hits enemy, then enemy hits player (if alive).
    */
   function _tick() {
     if (!fighting) return;
 
     var ps = Player.getState();
     var enemy = Enemy.getCurrent();
-    if (!enemy) {
-      _spawnNext();
-      return;
-    }
+    if (!enemy) return;
 
     // --- PLAYER ATTACKS ---
-    // Damage = player atk, reduced by enemy def (min 1)
-    var playerDmg = Math.max(1, ps.atk - enemy.def);
-
-    // Add some variance: +/- 20%
+    var rawDmg = Math.max(1, ps.atk - enemy.def);
+    // +/- 20% variance
     var variance = 0.8 + Math.random() * 0.4;
-    playerDmg = Math.floor(playerDmg * variance);
-    if (playerDmg < 1) playerDmg = 1;
+    var finalDmg = Math.max(1, Math.floor(rawDmg * variance));
 
-    var enemyDied = Enemy.takeDamage(playerDmg + enemy.def); // pass raw atk, takeDamage applies def
+    // Apply damage (pass raw atk so enemy.takeDamage applies def internally)
+    // Actually enemy.takeDamage already subtracts def, so pass ps.atk
+    var enemyDied = Enemy.takeDamage(ps.atk);
 
-    emit("player_attack", { damage: Math.max(1, ps.atk - enemy.def), target: enemy.name });
+    // Tell renderer to animate and show the actual damage dealt
+    Renderer.animatePlayerAttack(finalDmg);
+    emit("player_attack", { damage: finalDmg });
 
-    // --- CHECK ENEMY DEATH ---
+    // --- ENEMY DIES ---
     if (enemyDied) {
       _handleEnemyDeath(enemy);
       return;
     }
 
-    // --- ENEMY ATTACKS (after a short delay conceptually, same tick) ---
-    var enemyDmg = enemy.atk; // raw attack, player.takeDamage applies defense
-    var playerDied = Player.takeDamage(enemyDmg);
+    // --- ENEMY ATTACKS (same tick, slight conceptual delay) ---
+    var playerDied = Player.takeDamage(enemy.atk);
+    var actualDmg = Math.max(1, enemy.atk - ps.def);
+    Renderer.animateEnemyAttack(actualDmg);
+    emit("enemy_attack", { damage: actualDmg });
 
-    // Calculate actual damage dealt for display
-    var actualEnemyDmg = Math.max(1, enemyDmg - ps.def);
-    emit("enemy_attack", { damage: actualEnemyDmg, target: ps.heroClass });
-
-    // --- CHECK PLAYER DEATH ---
     if (playerDied) {
       _handlePlayerDeath();
     }
   }
 
   /**
-   * Handle enemy dying: give rewards, spawn next.
+   * Handle enemy death: give rewards, tell renderer, schedule next.
    */
   function _handleEnemyDeath(enemy) {
-    // Give XP and gold
+    _stopCombatTicks();
+
     var leveled = Player.addXp(enemy.xp);
     Player.addGold(enemy.gold);
     Player.recordKill();
 
-    emit("enemy_death", {
-      enemy: enemy.name,
-      xp: enemy.xp,
-      gold: enemy.gold,
-      isBoss: enemy.isBoss
-    });
+    // Tell renderer to fade out enemy and show rewards
+    Renderer.notifyEnemyDeath(enemy.xp, enemy.gold, enemy.isBoss);
+
+    emit("enemy_death", { enemy: enemy.name, xp: enemy.xp, gold: enemy.gold, isBoss: enemy.isBoss });
 
     if (leveled) {
+      Renderer.showLevelUp(Player.getState().level);
       emit("level_up", { level: Player.getState().level });
     }
 
-    // If boss died, mark it and allow zone advancement
+    // Boss defeated → advance zone
     if (enemy.isBoss) {
       var ps = Player.getState();
       ps.bossDefeated = true;
       emit("boss_defeated", { zone: GameData.zones[ps.currentZone].name });
 
-      // Auto-advance to next zone if available
       if (ps.currentZone < GameData.zones.length - 1) {
         Player.advanceZone();
         emit("zone_advance", { zone: GameData.zones[Player.getState().currentZone].name });
       }
     }
 
-    // Small heal between fights (25% of missing HP)
+    // Heal between fights (25% of missing HP)
     var ps2 = Player.getState();
     var missing = ps2.maxHp - ps2.hp;
     Player.heal(Math.floor(missing * 0.25));
 
-    // Clear old enemy and spawn next after a brief pause
     Enemy.clear();
-    setTimeout(function () {
-      if (fighting) _spawnNext();
-    }, 600);
+    // Next enemy scheduling handled by the state poller when renderer goes back to "walking"
   }
 
   /**
-   * Handle player dying: stop fighting, emit death event.
-   * Player respawns at full HP (roguelite - no penalty for now).
+   * Handle player death: stop everything, respawn after delay.
    */
   function _handlePlayerDeath() {
+    _stopCombatTicks();
+    Renderer.notifyPlayerDeath();
     emit("player_death");
-    stop();
 
-    // Respawn at full HP after a short delay
+    var wasFighting = fighting;
+    fighting = false;
+
+    // Respawn after 2 seconds
     setTimeout(function () {
       Player.fullHeal();
+      Enemy.clear();
+      Renderer.notifyPlayerRespawn();
       emit("player_respawn");
-    }, 1500);
+
+      // Auto-resume if player had auto-fight on
+      if (wasFighting) {
+        fighting = true;
+        _scheduleNextEnemy();
+        _startStatePoller();
+      }
+    }, 2000);
   }
 
-  /**
-   * Get recent combat log entries.
-   */
-  function getLog() {
-    return combatLog;
-  }
-
-  /**
-   * Check if currently fighting.
-   */
   function isFighting() {
     return fighting;
   }
@@ -216,8 +276,7 @@ var Combat = (function () {
     stop: stop,
     toggle: toggle,
     isFighting: isFighting,
-    setEventHandler: setEventHandler,
-    getLog: getLog
+    setEventHandler: setEventHandler
   };
 
 })();
