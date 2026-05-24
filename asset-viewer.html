@@ -3,152 +3,277 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IS3 Asset Viewer</title>
+  <title>IS3 Dungeon Scene Editor</title>
   <style>
-    /* Dark background so pixel art pops */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      background: #111;
+      background: #0a0a12;
       color: #ddd;
       font-family: 'Courier New', monospace;
-      padding: 20px;
-    }
-    h1 { color: #ffd700; margin-bottom: 10px; font-size: 20px; }
-    h2 { color: #88aaff; margin: 20px 0 8px; font-size: 16px; border-bottom: 1px solid #333; padding-bottom: 4px; }
-    h3 { color: #8f8; margin: 14px 0 6px; font-size: 13px; }
-
-    /* Each asset shown as a card with the image + its filename */
-    .asset-grid {
       display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      margin-bottom: 16px;
+      height: 100vh;
+      overflow: hidden;
     }
-    .asset-card {
-      background: #1a1a2a;
-      border: 1px solid #333;
-      border-radius: 4px;
+
+    /* --- LEFT PANEL: asset palette --- */
+    #palette {
+      width: 220px;
+      min-width: 220px;
+      background: #111118;
+      border-right: 1px solid #333;
+      overflow-y: auto;
       padding: 8px;
-      text-align: center;
+    }
+    #palette h2 {
+      font-size: 13px;
+      color: #ffd700;
+      margin: 0 0 6px;
+    }
+    .pal-section { margin-bottom: 12px; }
+    .pal-section h3 {
+      font-size: 10px;
+      color: #88aaff;
+      margin-bottom: 4px;
+      border-bottom: 1px solid #222;
+      padding-bottom: 2px;
       cursor: pointer;
-      transition: border-color 0.2s;
     }
-    .asset-card:hover { border-color: #ffd700; }
-    .asset-card.selected { border-color: #4f4; border-width: 2px; }
-    .asset-card img {
-      image-rendering: pixelated;
-      display: block;
-      margin: 0 auto 4px;
-    }
-    .asset-card .label {
-      font-size: 9px;
-      color: #888;
-      word-break: break-all;
-      max-width: 100px;
-    }
-    .asset-card .dims {
-      font-size: 8px;
-      color: #666;
-    }
-
-    /* Corridor preview canvas */
-    #preview-section {
-      margin-top: 30px;
-      border: 1px solid #444;
-      border-radius: 6px;
-      padding: 12px;
-      background: #0a0a15;
-    }
-    #preview-section h2 { margin-top: 0; }
-    #corridorCanvas {
-      display: block;
-      width: 100%;
-      height: 300px;
-      image-rendering: pixelated;
-      border: 1px solid #333;
-      margin-top: 8px;
-    }
-
-    /* Controls for the preview */
-    .controls {
+    .pal-section h3:hover { color: #aaccff; }
+    .pal-grid {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
-      margin: 10px 0;
-      align-items: center;
+      gap: 4px;
     }
-    .controls label { font-size: 11px; color: #aaa; }
-    .controls select, .controls input {
+    .pal-grid.collapsed { display: none; }
+    .pal-item {
+      background: #1a1a28;
+      border: 1px solid #333;
+      border-radius: 3px;
+      padding: 3px;
+      cursor: grab;
+      text-align: center;
+      transition: border-color 0.15s;
+    }
+    .pal-item:hover { border-color: #ffd700; }
+    .pal-item img {
+      image-rendering: pixelated;
+      display: block;
+      max-width: 48px;
+      max-height: 48px;
+      margin: 0 auto;
+    }
+    .pal-item .name {
+      font-size: 7px;
+      color: #777;
+      margin-top: 2px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 52px;
+    }
+
+    /* --- CENTER: scene canvas --- */
+    #scene-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    #toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: #151520;
+      border-bottom: 1px solid #333;
+      flex-wrap: wrap;
+    }
+    #toolbar button {
+      background: #252535;
+      color: #ddd;
+      border: 1px solid #444;
+      padding: 4px 10px;
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    #toolbar button:hover { background: #353548; border-color: #666; }
+    #toolbar button.active { background: #445; border-color: #88f; color: #fff; }
+    #toolbar label { font-size: 10px; color: #aaa; }
+    #toolbar select, #toolbar input[type="number"] {
       background: #222;
       color: #ddd;
       border: 1px solid #444;
-      padding: 4px 8px;
+      padding: 2px 6px;
       font-family: 'Courier New', monospace;
-      font-size: 11px;
+      font-size: 10px;
       border-radius: 3px;
     }
-    .controls input[type="range"] { width: 120px; }
-    .val { font-size: 10px; color: #ffd700; min-width: 30px; display: inline-block; }
+    #toolbar input[type="number"] { width: 50px; }
+    .sep { width: 1px; height: 20px; background: #333; }
+
+    #canvas-wrap {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: #080810;
+    }
+    #sceneCanvas {
+      position: absolute;
+      top: 0; left: 0;
+      image-rendering: pixelated;
+      cursor: crosshair;
+    }
+
+    /* --- RIGHT PANEL: selected object properties --- */
+    #props {
+      width: 200px;
+      min-width: 200px;
+      background: #111118;
+      border-left: 1px solid #333;
+      padding: 8px;
+      overflow-y: auto;
+    }
+    #props h2 {
+      font-size: 13px;
+      color: #ffd700;
+      margin-bottom: 8px;
+    }
+    #props .prop-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    #props .prop-row label { font-size: 10px; color: #aaa; }
+    #props .prop-row input {
+      background: #222;
+      color: #ddd;
+      border: 1px solid #444;
+      padding: 2px 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      border-radius: 3px;
+      width: 70px;
+    }
+    #props .prop-row input[type="range"] { width: 90px; }
+    #prop-none { font-size: 10px; color: #666; }
+    #layer-list { margin-top: 12px; }
+    #layer-list h3 { font-size: 11px; color: #8f8; margin-bottom: 4px; }
+    .layer-item {
+      font-size: 9px;
+      padding: 3px 6px;
+      background: #1a1a28;
+      border: 1px solid #333;
+      margin-bottom: 2px;
+      border-radius: 2px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .layer-item.selected { border-color: #ffd700; background: #252530; }
+    .layer-item .del-btn {
+      color: #f44;
+      cursor: pointer;
+      font-size: 10px;
+      padding: 0 4px;
+    }
+    .layer-item .del-btn:hover { color: #f88; }
+
+    /* Export area */
+    #export-area {
+      margin-top: 12px;
+      border-top: 1px solid #333;
+      padding-top: 8px;
+    }
+    #export-area textarea {
+      width: 100%;
+      height: 80px;
+      background: #1a1a28;
+      color: #8f8;
+      border: 1px solid #333;
+      font-family: 'Courier New', monospace;
+      font-size: 8px;
+      padding: 4px;
+      border-radius: 3px;
+      resize: vertical;
+    }
   </style>
 </head>
 <body>
 
-<h1>IS3 Asset Viewer & Corridor Layout Tool</h1>
-<p style="font-size:11px;color:#888;margin-bottom:16px;">
-  Click assets to see their actual size. Use the corridor preview below to test how they look in-game.
-</p>
+<!-- LEFT: Asset palette -->
+<div id="palette">
+  <h2>Assets</h2>
+  <div id="pal-sections"></div>
+</div>
 
-<!-- All assets organized by category -->
-<div id="asset-sections"></div>
-
-<!-- Corridor preview -->
-<div id="preview-section">
-  <h2>Corridor Preview</h2>
-  <div class="controls">
-    <label>Zone:
-      <select id="ctrl-zone">
-        <option value="forest">Dark Forest</option>
-        <option value="cavern">Cavern Depths</option>
-        <option value="castle">Ruined Castle</option>
-        <option value="cemetery">Forsaken Cemetery</option>
-        <option value="hell">Infernal Pits</option>
-        <option value="cosmic">Cosmic Void</option>
-      </select>
+<!-- CENTER: Scene canvas -->
+<div id="scene-area">
+  <div id="toolbar">
+    <label>Scene:
+      <input type="number" id="tb-width" value="800" min="200" max="2000" step="50">
+      x
+      <input type="number" id="tb-height" value="500" min="200" max="1200" step="50">
     </label>
-    <label>Wall Height:
-      <input type="range" id="ctrl-wallH" min="10" max="50" value="22">
-      <span class="val" id="val-wallH">22%</span>
+    <div class="sep"></div>
+    <label>BG:
+      <input type="color" id="tb-bgcolor" value="#0d1f0d">
     </label>
-    <label>Floor Y:
-      <input type="range" id="ctrl-floorY" min="40" max="80" value="60">
-      <span class="val" id="val-floorY">60%</span>
-    </label>
-    <label>Tile Size:
-      <input type="range" id="ctrl-tileSize" min="32" max="128" value="64">
-      <span class="val" id="val-tileSize">64</span>
-    </label>
-    <label>Deco Scale:
-      <input type="range" id="ctrl-decoScale" min="50" max="300" value="150">
-      <span class="val" id="val-decoScale">1.5x</span>
-    </label>
-    <label>Deco Opacity:
-      <input type="range" id="ctrl-decoAlpha" min="10" max="100" value="75">
-      <span class="val" id="val-decoAlpha">75%</span>
-    </label>
-    <label>Sprite Scale:
-      <input type="range" id="ctrl-spriteScale" min="100" max="400" value="280">
-      <span class="val" id="val-spriteScale">2.8x</span>
-    </label>
+    <div class="sep"></div>
+    <button id="tb-grid" class="active">Grid</button>
+    <button id="tb-snap">Snap</button>
+    <div class="sep"></div>
+    <button id="tb-export">Export JSON</button>
+    <button id="tb-import">Import JSON</button>
+    <button id="tb-clear">Clear All</button>
+    <div class="sep"></div>
+    <label style="font-size:9px;color:#666;">Drag assets from palette. Click to select. Arrow keys to nudge.</label>
   </div>
-  <canvas id="corridorCanvas"></canvas>
+  <div id="canvas-wrap">
+    <canvas id="sceneCanvas"></canvas>
+  </div>
+</div>
+
+<!-- RIGHT: Properties -->
+<div id="props">
+  <h2>Properties</h2>
+  <div id="prop-panel">
+    <div id="prop-none">Click an object to edit its properties</div>
+    <div id="prop-fields" style="display:none;">
+      <div class="prop-row"><label>X:</label><input type="number" id="prop-x" step="1"></div>
+      <div class="prop-row"><label>Y:</label><input type="number" id="prop-y" step="1"></div>
+      <div class="prop-row"><label>Scale:</label><input type="range" id="prop-scale" min="0.2" max="5" step="0.1" value="1"><span id="prop-scale-val" style="font-size:9px;color:#ffd700;width:30px;">1.0</span></div>
+      <div class="prop-row"><label>Opacity:</label><input type="range" id="prop-alpha" min="0.1" max="1" step="0.05" value="1"><span id="prop-alpha-val" style="font-size:9px;color:#ffd700;width:30px;">1.0</span></div>
+      <div class="prop-row"><label>Flip X:</label><input type="checkbox" id="prop-flipx"></div>
+      <div class="prop-row"><label>Layer:</label>
+        <select id="prop-layer">
+          <option value="0">Back</option>
+          <option value="1">Mid</option>
+          <option value="2">Front</option>
+        </select>
+      </div>
+      <div class="prop-row"><button id="prop-dup" style="width:100%;">Duplicate</button></div>
+      <div class="prop-row"><button id="prop-del" style="width:100%;color:#f44;">Delete</button></div>
+    </div>
+  </div>
+
+  <div id="layer-list">
+    <h3>Scene Objects</h3>
+    <div id="obj-list"></div>
+  </div>
+
+  <div id="export-area">
+    <textarea id="export-json" readonly placeholder="Export JSON will appear here..."></textarea>
+  </div>
 </div>
 
 <script>
-/**
- * Asset definitions — every asset in the game organized by category.
- * Each entry: { key: "display_name", src: "path/to/file.png" }
- */
-var ASSETS = {
+// =====================================================
+//  ASSET DEFINITIONS
+// =====================================================
+var ASSET_CATS = {
   "Heroes": [
     { key: "knight",      src: "assets/heroes/Knight 64x96.png" },
     { key: "warrior",     src: "assets/heroes/Warrior 64x96.png" },
@@ -157,437 +282,715 @@ var ASSETS = {
     { key: "cleric",      src: "assets/heroes/Cleric 64x96.png" },
     { key: "necromancer", src: "assets/heroes/Necromancer 64x96.png" }
   ],
-  "Enemies (Forest/Cavern)": [
-    { key: "slime",    src: "assets/enemies/Slime 64x96.png" },
-    { key: "rat",      src: "assets/enemies/Rat 64x96.png" },
-    { key: "snake",    src: "assets/enemies/Snake 64x96.png" },
-    { key: "spider",   src: "assets/enemies/Spider 64x96.png" },
-    { key: "wolf",     src: "assets/enemies/Wolf 64x96.png" },
-    { key: "goblin",   src: "assets/enemies/Goblin 64x96.png" },
-    { key: "kobold",   src: "assets/enemies/Kobold 64x96.png" },
-    { key: "skeleton", src: "assets/enemies/Skeleton 64x96.png" }
-  ],
-  "Enemies (Castle/Cemetery)": [
+  "Enemies": [
+    { key: "slime", src: "assets/enemies/Slime 64x96.png" },
+    { key: "rat", src: "assets/enemies/Rat 64x96.png" },
+    { key: "snake", src: "assets/enemies/Snake 64x96.png" },
+    { key: "spider", src: "assets/enemies/Spider 64x96.png" },
+    { key: "wolf", src: "assets/enemies/Wolf 64x96.png" },
+    { key: "goblin", src: "assets/enemies/Goblin 64x96.png" },
+    { key: "kobold", src: "assets/enemies/Kobold 64x96.png" },
+    { key: "skeleton", src: "assets/enemies/Skeleton 64x96.png" },
     { key: "skeleton_knight", src: "assets/enemies/Skeleton Knight 64x96.png" },
-    { key: "skeleton_mage",   src: "assets/enemies/Skeleton Mage 64x96.png" },
-    { key: "ghoul",           src: "assets/enemies/Ghoul 64x96.png" },
-    { key: "orc",             src: "assets/enemies/Orc 64x96.png" },
-    { key: "minotaur",        src: "assets/enemies/Minotaur 64x96.png" },
-    { key: "guardian",        src: "assets/enemies/Guardian 64x96.png" },
-    { key: "wraith",          src: "assets/enemies/Wraith 64x96.png" },
-    { key: "undead_hound",    src: "assets/enemies/Undead Hound 64x96.png" },
-    { key: "living_shadow",   src: "assets/enemies/Living Shadow 64x96.png" },
-    { key: "warlock",         src: "assets/enemies/Warlock 64x96.png" }
-  ],
-  "Enemies (Hell/Cosmic)": [
-    { key: "hell_hound",     src: "assets/enemies/Hell Hound 64x96.png" },
-    { key: "fire_golem",     src: "assets/enemies/Fire Golem 64x96.png" },
-    { key: "succubus",       src: "assets/enemies/Succubus 64x96.png" },
-    { key: "raging_demon",   src: "assets/enemies/Raging Demon 64x96.png" },
-    { key: "berserker",      src: "assets/enemies/Berserker 64x96.png" },
-    { key: "cyclops",        src: "assets/enemies/Cyclops 64x96.png" },
-    { key: "mind_flayer",    src: "assets/enemies/Mind Flayer 64x96.png" },
-    { key: "elder_lich",     src: "assets/enemies/Elder Lich 64x96.png" },
-    { key: "beholder",       src: "assets/enemies/Beholder 64x96.png" },
+    { key: "skeleton_mage", src: "assets/enemies/Skeleton Mage 64x96.png" },
+    { key: "ghoul", src: "assets/enemies/Ghoul 64x96.png" },
+    { key: "orc", src: "assets/enemies/Orc 64x96.png" },
+    { key: "minotaur", src: "assets/enemies/Minotaur 64x96.png" },
+    { key: "guardian", src: "assets/enemies/Guardian 64x96.png" },
+    { key: "wraith", src: "assets/enemies/Wraith 64x96.png" },
+    { key: "undead_hound", src: "assets/enemies/Undead Hound 64x96.png" },
+    { key: "living_shadow", src: "assets/enemies/Living Shadow 64x96.png" },
+    { key: "warlock", src: "assets/enemies/Warlock 64x96.png" },
+    { key: "hell_hound", src: "assets/enemies/Hell Hound 64x96.png" },
+    { key: "fire_golem", src: "assets/enemies/Fire Golem 64x96.png" },
+    { key: "succubus", src: "assets/enemies/Succubus 64x96.png" },
+    { key: "raging_demon", src: "assets/enemies/Raging Demon 64x96.png" },
+    { key: "berserker", src: "assets/enemies/Berserker 64x96.png" },
+    { key: "cyclops", src: "assets/enemies/Cyclops 64x96.png" },
+    { key: "mind_flayer", src: "assets/enemies/Mind Flayer 64x96.png" },
+    { key: "elder_lich", src: "assets/enemies/Elder Lich 64x96.png" },
+    { key: "beholder", src: "assets/enemies/Beholder 64x96.png" },
     { key: "emerald_dragon", src: "assets/enemies/Emerald Dragon 64x96.png" },
-    { key: "annihilator",    src: "assets/enemies/Annihilator 64x96.png" },
-    { key: "manticore",      src: "assets/enemies/Manticore 64x96.png" }
+    { key: "annihilator", src: "assets/enemies/Annihilator 64x96.png" },
+    { key: "manticore", src: "assets/enemies/Manticore 64x96.png" }
   ],
   "Bosses": [
     { key: "boss_forest_spirit", src: "assets/bosses/Spirit of the Forest 128x160.png" },
-    { key: "boss_chimera",       src: "assets/bosses/Chimera 128x128.png" },
-    { key: "boss_king",          src: "assets/bosses/The King.png" },
-    { key: "boss_death",         src: "assets/bosses/Death 128x128.png" },
-    { key: "boss_balrog",        src: "assets/bosses/Infernal Balrog 128x128.png" },
-    { key: "boss_nightmare",     src: "assets/bosses/Unending Nightmare 128x128.png" },
-    { key: "boss_dragon_king",   src: "assets/bosses/Dragon King 128x128.png" },
-    { key: "boss_behemoth",      src: "assets/bosses/Behemoth Wyrm 128x128.png" },
-    { key: "boss_leviathan",     src: "assets/bosses/Leviathan 128x128.png" }
+    { key: "boss_chimera", src: "assets/bosses/Chimera 128x128.png" },
+    { key: "boss_king", src: "assets/bosses/The King.png" },
+    { key: "boss_death", src: "assets/bosses/Death 128x128.png" },
+    { key: "boss_balrog", src: "assets/bosses/Infernal Balrog 128x128.png" },
+    { key: "boss_nightmare", src: "assets/bosses/Unending Nightmare 128x128.png" },
+    { key: "boss_dragon_king", src: "assets/bosses/Dragon King 128x128.png" },
+    { key: "boss_behemoth", src: "assets/bosses/Behemoth Wyrm 128x128.png" },
+    { key: "boss_leviathan", src: "assets/bosses/Leviathan 128x128.png" }
   ],
-  "Forest Tiles": [
+  "Forest": [
     { key: "tile_forest_01", src: "assets/tilesets/forest/Forest Floor Tile 01.png" },
     { key: "tile_forest_02", src: "assets/tilesets/forest/Forest Floor Tile 02.png" },
     { key: "tile_forest_03", src: "assets/tilesets/forest/Forest Floor Tile 03.png" },
-    { key: "tree_01",        src: "assets/tilesets/forest/Tree Tile 01.png" },
-    { key: "tree_02",        src: "assets/tilesets/forest/Tree Tile 02.png" },
-    { key: "tree_03",        src: "assets/tilesets/forest/Tree Tile 03.png" },
-    { key: "tree_04",        src: "assets/tilesets/forest/Tree Tile 04.png" },
-    { key: "grass_01",       src: "assets/tilesets/forest/Grass Tile 01.png" },
-    { key: "grass_02",       src: "assets/tilesets/forest/Grass Tile 02.png" },
+    { key: "tree_01", src: "assets/tilesets/forest/Tree Tile 01.png" },
+    { key: "tree_02", src: "assets/tilesets/forest/Tree Tile 02.png" },
+    { key: "tree_03", src: "assets/tilesets/forest/Tree Tile 03.png" },
+    { key: "tree_04", src: "assets/tilesets/forest/Tree Tile 04.png" },
+    { key: "tree_05", src: "assets/tilesets/forest/Tree Tile 05.png" },
+    { key: "tree_06", src: "assets/tilesets/forest/Tree Tile 06.png" },
+    { key: "grass_01", src: "assets/tilesets/forest/Grass Tile 01.png" },
+    { key: "grass_02", src: "assets/tilesets/forest/Grass Tile 02.png" },
+    { key: "grass_03", src: "assets/tilesets/forest/Grass Tile 03.png" },
+    { key: "grass_04", src: "assets/tilesets/forest/Grass Tile 04.png" },
+    { key: "grass_05", src: "assets/tilesets/forest/Grass Tile 05.png" },
     { key: "forest_rock_01", src: "assets/tilesets/forest/Forest Rock Tile 01.png" },
     { key: "forest_rock_02", src: "assets/tilesets/forest/Forest Rock Tile 02.png" }
   ],
-  "Castle Tiles": [
-    { key: "tile_castle_01",       src: "assets/tilesets/castle/Floor Tile 01.png" },
-    { key: "tile_castle_02",       src: "assets/tilesets/castle/Floor Tile 02.png" },
-    { key: "tile_castle_03",       src: "assets/tilesets/castle/Floor Tile 03.png" },
-    { key: "castle_wall_left_01",  src: "assets/tilesets/castle/Left Wall Tile 01.png" },
-    { key: "castle_wall_left_02",  src: "assets/tilesets/castle/Left Wall Tile 02.png" },
-    { key: "castle_sconce_left",   src: "assets/tilesets/castle/Left Sconce Wall Tile.png" },
-    { key: "castle_wall_right_01", src: "assets/tilesets/castle/Right Wall Tile 01.png" },
-    { key: "castle_column",        src: "assets/tilesets/castle/Column Tile.png" },
-    { key: "castle_column_02",     src: "assets/tilesets/castle/Column Tile 02.png" }
+  "Castle": [
+    { key: "tile_castle_01", src: "assets/tilesets/castle/Floor Tile 01.png" },
+    { key: "tile_castle_02", src: "assets/tilesets/castle/Floor Tile 02.png" },
+    { key: "tile_castle_03", src: "assets/tilesets/castle/Floor Tile 03.png" },
+    { key: "castle_wall_l1", src: "assets/tilesets/castle/Left Wall Tile 01.png" },
+    { key: "castle_wall_l2", src: "assets/tilesets/castle/Left Wall Tile 02.png" },
+    { key: "castle_wall_r1", src: "assets/tilesets/castle/Right Wall Tile 01.png" },
+    { key: "castle_wall_r2", src: "assets/tilesets/castle/Right Wall Tile 02.png" },
+    { key: "castle_sconce_l", src: "assets/tilesets/castle/Left Sconce Wall Tile.png" },
+    { key: "castle_sconce_r", src: "assets/tilesets/castle/Right Sconce Wall Tile.png" },
+    { key: "castle_column", src: "assets/tilesets/castle/Column Tile.png" },
+    { key: "castle_column_02", src: "assets/tilesets/castle/Column Tile 02.png" },
+    { key: "castle_bl_col", src: "assets/tilesets/castle/Bottom Left Column Tile.png" },
+    { key: "castle_br_col", src: "assets/tilesets/castle/Bottom Right Column Tile.png" },
+    { key: "castle_bot_corner", src: "assets/tilesets/castle/Bottom Corner Column Tile.png" }
   ],
-  "Cavern Tiles": [
-    { key: "tile_cavern_01",       src: "assets/tilesets/cavern/Cavern Floor Tile 01.png" },
-    { key: "tile_cavern_02",       src: "assets/tilesets/cavern/Cavern Floor Tile 02.png" },
-    { key: "cavern_wall_mid",      src: "assets/tilesets/cavern/Cavern Wall Middle.png" },
-    { key: "cavern_wall_top_left", src: "assets/tilesets/cavern/Cavern Wall Top Left.png" },
-    { key: "cavern_stalagmite_01", src: "assets/tilesets/cavern/Cavern Stalagmite Tile 01.png" },
-    { key: "cavern_stalagmite_02", src: "assets/tilesets/cavern/Cavern Stalagmite Tile 02.png" }
+  "Cavern": [
+    { key: "tile_cavern_01", src: "assets/tilesets/cavern/Cavern Floor Tile 01.png" },
+    { key: "tile_cavern_02", src: "assets/tilesets/cavern/Cavern Floor Tile 02.png" },
+    { key: "cavern_wall_mid", src: "assets/tilesets/cavern/Cavern Wall Middle.png" },
+    { key: "cavern_wall_tl", src: "assets/tilesets/cavern/Cavern Wall Top Left.png" },
+    { key: "cavern_wall_tr", src: "assets/tilesets/cavern/Cavern Wall Top Right.png" },
+    { key: "cavern_wall_bl", src: "assets/tilesets/cavern/Cavern Wall Bottom Left.png" },
+    { key: "cavern_wall_br", src: "assets/tilesets/cavern/Cavern Wall Bottom Right.png" },
+    { key: "cavern_stal_01", src: "assets/tilesets/cavern/Cavern Stalagmite Tile 01.png" },
+    { key: "cavern_stal_02", src: "assets/tilesets/cavern/Cavern Stalagmite Tile 02.png" },
+    { key: "cavern_stal_03", src: "assets/tilesets/cavern/Cavern Stalagmite Tile 03.png" }
   ],
-  "Cemetery Tiles": [
-    { key: "tile_cemetery_01",  src: "assets/tilesets/cemetery/Cemetery Floor Tile 01.png" },
-    { key: "tile_cemetery_02",  src: "assets/tilesets/cemetery/Cemetery Floor Tile 02.png" },
-    { key: "cemetery_grave_01", src: "assets/tilesets/cemetery/Cemetery Gravestone 01.png" },
-    { key: "cemetery_grave_02", src: "assets/tilesets/cemetery/Cemetery Gravestone 02.png" },
-    { key: "cemetery_tree_01",  src: "assets/tilesets/cemetery/Cemetery Tree 1.png" },
-    { key: "cemetery_tree_02",  src: "assets/tilesets/cemetery/Cemetery Tree 02.png" },
-    { key: "cemetery_fence_col",src: "assets/tilesets/cemetery/Cemetery Fence Column.png" }
+  "Cemetery": [
+    { key: "tile_cem_01", src: "assets/tilesets/cemetery/Cemetery Floor Tile 01.png" },
+    { key: "tile_cem_02", src: "assets/tilesets/cemetery/Cemetery Floor Tile 02.png" },
+    { key: "cem_grave_01", src: "assets/tilesets/cemetery/Cemetery Gravestone 01.png" },
+    { key: "cem_grave_02", src: "assets/tilesets/cemetery/Cemetery Gravestone 02.png" },
+    { key: "cem_grave_03", src: "assets/tilesets/cemetery/Cemetery Gravestone 03.png" },
+    { key: "cem_grave_04", src: "assets/tilesets/cemetery/Cemetery Gravestone 04.png" },
+    { key: "cem_tree_01", src: "assets/tilesets/cemetery/Cemetery Tree 1.png" },
+    { key: "cem_tree_02", src: "assets/tilesets/cemetery/Cemetery Tree 02.png" },
+    { key: "cem_fence_col", src: "assets/tilesets/cemetery/Cemetery Fence Column.png" }
   ],
-  "Hell Tiles": [
-    { key: "tile_hell_01",  src: "assets/tilesets/hell/Hell Floor Tile 01.png" },
-    { key: "tile_hell_02",  src: "assets/tilesets/hell/Hell Floor Tile 02.png" },
-    { key: "hell_column",   src: "assets/tilesets/hell/Hell Column.png" },
+  "Hell": [
+    { key: "tile_hell_01", src: "assets/tilesets/hell/Hell Floor Tile 01.png" },
+    { key: "tile_hell_02", src: "assets/tilesets/hell/Hell Floor Tile 02.png" },
+    { key: "hell_column", src: "assets/tilesets/hell/Hell Column.png" },
     { key: "hell_spire_01", src: "assets/tilesets/hell/Hell Spire 01.png" },
     { key: "hell_spire_02", src: "assets/tilesets/hell/Hell Spire 02.png" },
-    { key: "hell_bone_01",  src: "assets/tilesets/hell/Hell Bone Pile 01.png" },
-    { key: "hell_bone_02",  src: "assets/tilesets/hell/Hell Bone Pile 02.png" },
-    { key: "hell_torch",    src: "assets/tilesets/hell/Hell Torch.png" },
-    { key: "hell_lava_01",  src: "assets/tilesets/hell/Hell Lava 01.png" },
-    { key: "hell_lava_02",  src: "assets/tilesets/hell/Hell Lava 02.png" }
+    { key: "hell_spire_03", src: "assets/tilesets/hell/Hell Spire 03.png" },
+    { key: "hell_spire_04", src: "assets/tilesets/hell/Hell Spire 04.png" },
+    { key: "hell_bone_01", src: "assets/tilesets/hell/Hell Bone Pile 01.png" },
+    { key: "hell_bone_02", src: "assets/tilesets/hell/Hell Bone Pile 02.png" },
+    { key: "hell_bone_03", src: "assets/tilesets/hell/Hell Bone Pile 03.png" },
+    { key: "hell_torch", src: "assets/tilesets/hell/Hell Torch.png" },
+    { key: "hell_giant_spire", src: "assets/tilesets/hell/Hell Giant Spire.png" },
+    { key: "hell_lava_01", src: "assets/tilesets/hell/Hell Lava 01.png" },
+    { key: "hell_lava_02", src: "assets/tilesets/hell/Hell Lava 02.png" }
   ],
-  "Cosmic Tiles": [
-    { key: "tile_cosmic_01",  src: "assets/tilesets/cosmic/Cosmic Floor Tile 01.png" },
-    { key: "tile_cosmic_02",  src: "assets/tilesets/cosmic/Cosmic Floor Tile 02.png" },
-    { key: "cosmic_wall_01",  src: "assets/tilesets/cosmic/Cosmic Wall 01.png" },
-    { key: "cosmic_wall_02",  src: "assets/tilesets/cosmic/Cosmic Wall 02.png" },
-    { key: "cosmic_wall_03",  src: "assets/tilesets/cosmic/Cosmic Wall 03.png" },
-    { key: "cosmic_light_01", src: "assets/tilesets/cosmic/Cosmic Light 01.png" },
-    { key: "cosmic_light_02", src: "assets/tilesets/cosmic/Cosmic Light 02.png" }
+  "Cosmic": [
+    { key: "tile_cos_01", src: "assets/tilesets/cosmic/Cosmic Floor Tile 01.png" },
+    { key: "tile_cos_02", src: "assets/tilesets/cosmic/Cosmic Floor Tile 02.png" },
+    { key: "cos_wall_01", src: "assets/tilesets/cosmic/Cosmic Wall 01.png" },
+    { key: "cos_wall_02", src: "assets/tilesets/cosmic/Cosmic Wall 02.png" },
+    { key: "cos_wall_03", src: "assets/tilesets/cosmic/Cosmic Wall 03.png" },
+    { key: "cos_light_01", src: "assets/tilesets/cosmic/Cosmic Light 01.png" },
+    { key: "cos_light_02", src: "assets/tilesets/cosmic/Cosmic Light 02.png" }
   ],
-  "Overworld Tiles": [
-    { key: "tile_overworld_01",    src: "assets/tilesets/overworld/Overworld Floor 01.png" },
-    { key: "tile_overworld_02",    src: "assets/tilesets/overworld/Overworld Floor 02.png" },
-    { key: "overworld_wall_mid_01",src: "assets/tilesets/overworld/Overworld Wall Middle 01.png" },
-    { key: "overworld_rocks_01",   src: "assets/tilesets/overworld/Overworld Rocks 01.png" },
-    { key: "overworld_rocks_02",   src: "assets/tilesets/overworld/Overworld Rocks 02.png" }
+  "Overworld": [
+    { key: "tile_ow_01", src: "assets/tilesets/overworld/Overworld Floor 01.png" },
+    { key: "tile_ow_02", src: "assets/tilesets/overworld/Overworld Floor 02.png" },
+    { key: "ow_wall_01", src: "assets/tilesets/overworld/Overworld Wall Middle 01.png" },
+    { key: "ow_wall_02", src: "assets/tilesets/overworld/Overworld Wall Middle 02.png" },
+    { key: "ow_rocks_01", src: "assets/tilesets/overworld/Overworld Rocks 01.png" },
+    { key: "ow_rocks_02", src: "assets/tilesets/overworld/Overworld Rocks 02.png" }
   ]
 };
 
-// Zone configs matching gameData.js — used for corridor preview
-var ZONES = {
-  forest:   { tiles: ["tile_forest_01","tile_forest_02","tile_forest_03"], wallsTop: ["tree_01","tree_02","tree_03","tree_04"], wallsBottom: ["grass_01","grass_02","forest_rock_01","forest_rock_02"], sky: ["#0d1f0d","#1a2a1a"] },
-  cavern:   { tiles: ["tile_cavern_01","tile_cavern_02"], wallsTop: ["cavern_wall_mid","cavern_wall_top_left"], wallsBottom: ["cavern_stalagmite_01","cavern_stalagmite_02"], sky: ["#0d0d1f","#1a1a2a"] },
-  castle:   { tiles: ["tile_castle_01","tile_castle_02","tile_castle_03"], wallsTop: ["castle_wall_left_01","castle_wall_left_02","castle_sconce_left"], wallsBottom: ["castle_column","castle_column_02"], sky: ["#111111","#2a2a2a"] },
-  cemetery: { tiles: ["tile_cemetery_01","tile_cemetery_02"], wallsTop: ["cemetery_tree_01","cemetery_tree_02","cemetery_fence_col"], wallsBottom: ["cemetery_grave_01","cemetery_grave_02"], sky: ["#0f0d1a","#1f1a2a"] },
-  hell:     { tiles: ["tile_hell_01","tile_hell_02"], wallsTop: ["hell_spire_01","hell_spire_02","hell_torch"], wallsBottom: ["hell_bone_01","hell_bone_02","hell_column"], sky: ["#1a0505","#2a1010"] },
-  cosmic:   { tiles: ["tile_cosmic_01","tile_cosmic_02"], wallsTop: ["cosmic_wall_01","cosmic_wall_02","cosmic_wall_03"], wallsBottom: ["cosmic_light_01","cosmic_light_02"], sky: ["#050520","#0a0a2a"] }
-};
+// =====================================================
+//  STATE
+// =====================================================
+var images = {};         // loaded Image objects keyed by asset key
+var srcMap = {};         // key → src path
 
-// Loaded images cache
-var loadedImages = {};
+// Scene objects: each is { id, key, src, x, y, scale, alpha, flipX, layer }
+var sceneObjs = [];
+var nextId = 1;
+var selectedId = null;   // currently selected object ID
+var dragging = null;     // { id, offsetX, offsetY } when dragging an object
+var dragNew = null;      // { key, src } when dragging from palette
 
-// Build a flat lookup: key → src
-var srcLookup = {};
-for (var cat in ASSETS) {
-  ASSETS[cat].forEach(function(a) { srcLookup[a.key] = a.src; });
-}
+// Settings
+var showGrid = true;
+var snapToGrid = false;
+var gridSize = 32;
+var bgColor = "#0d1f0d";
 
-/**
- * Load an image by key, return from cache if already loaded.
- */
-function getImg(key) {
-  if (loadedImages[key]) return loadedImages[key];
-  var src = srcLookup[key];
-  if (!src) return null;
-  var img = new Image();
-  img.src = src;
-  loadedImages[key] = img;
-  return img;
-}
+// Canvas stuff
+var canvas, ctx, wrap;
+var sceneW = 800, sceneH = 500;
 
-/**
- * Build the asset grid sections in the page.
- */
-function buildAssetSections() {
-  var container = document.getElementById("asset-sections");
+// =====================================================
+//  INIT
+// =====================================================
+window.addEventListener("DOMContentLoaded", function() {
+  canvas = document.getElementById("sceneCanvas");
+  ctx = canvas.getContext("2d");
+  wrap = document.getElementById("canvas-wrap");
 
-  for (var category in ASSETS) {
-    var h2 = document.createElement("h2");
-    h2.textContent = category;
-    container.appendChild(h2);
+  // Build palette
+  buildPalette();
+
+  // Preload all images
+  for (var cat in ASSET_CATS) {
+    ASSET_CATS[cat].forEach(function(a) {
+      srcMap[a.key] = a.src;
+      var img = new Image();
+      img.src = a.src;
+      images[a.key] = img;
+    });
+  }
+
+  // Size canvas
+  resizeCanvas();
+  window.addEventListener("resize", resizeCanvas);
+
+  // Canvas mouse events
+  canvas.addEventListener("mousedown", onMouseDown);
+  canvas.addEventListener("mousemove", onMouseMove);
+  canvas.addEventListener("mouseup", onMouseUp);
+  canvas.addEventListener("dblclick", onDblClick);
+
+  // Drop from palette
+  canvas.addEventListener("dragover", function(e) { e.preventDefault(); });
+  canvas.addEventListener("drop", onDrop);
+
+  // Keyboard
+  window.addEventListener("keydown", onKeyDown);
+
+  // Toolbar
+  document.getElementById("tb-grid").addEventListener("click", function() {
+    showGrid = !showGrid;
+    this.classList.toggle("active", showGrid);
+    draw();
+  });
+  document.getElementById("tb-snap").addEventListener("click", function() {
+    snapToGrid = !snapToGrid;
+    this.classList.toggle("active", snapToGrid);
+  });
+  document.getElementById("tb-bgcolor").addEventListener("input", function() {
+    bgColor = this.value;
+    draw();
+  });
+  document.getElementById("tb-width").addEventListener("change", function() {
+    sceneW = parseInt(this.value) || 800;
+    resizeCanvas(); draw();
+  });
+  document.getElementById("tb-height").addEventListener("change", function() {
+    sceneH = parseInt(this.value) || 500;
+    resizeCanvas(); draw();
+  });
+  document.getElementById("tb-export").addEventListener("click", exportJSON);
+  document.getElementById("tb-import").addEventListener("click", importJSON);
+  document.getElementById("tb-clear").addEventListener("click", function() {
+    sceneObjs = []; selectedId = null; updateProps(); updateObjList(); draw();
+  });
+
+  // Property inputs
+  ["prop-x","prop-y"].forEach(function(id) {
+    document.getElementById(id).addEventListener("input", onPropChange);
+  });
+  document.getElementById("prop-scale").addEventListener("input", function() {
+    document.getElementById("prop-scale-val").textContent = parseFloat(this.value).toFixed(1);
+    onPropChange();
+  });
+  document.getElementById("prop-alpha").addEventListener("input", function() {
+    document.getElementById("prop-alpha-val").textContent = parseFloat(this.value).toFixed(2);
+    onPropChange();
+  });
+  document.getElementById("prop-flipx").addEventListener("change", onPropChange);
+  document.getElementById("prop-layer").addEventListener("change", onPropChange);
+  document.getElementById("prop-dup").addEventListener("click", duplicateSelected);
+  document.getElementById("prop-del").addEventListener("click", deleteSelected);
+
+  // Initial draw
+  setTimeout(draw, 300);
+});
+
+// =====================================================
+//  PALETTE
+// =====================================================
+function buildPalette() {
+  var container = document.getElementById("pal-sections");
+  for (var cat in ASSET_CATS) {
+    var sec = document.createElement("div");
+    sec.className = "pal-section";
+
+    var h3 = document.createElement("h3");
+    h3.textContent = cat + " ▾";
+    sec.appendChild(h3);
 
     var grid = document.createElement("div");
-    grid.className = "asset-grid";
+    grid.className = "pal-grid";
 
-    ASSETS[category].forEach(function(asset) {
-      var card = document.createElement("div");
-      card.className = "asset-card";
+    // Toggle collapse on header click
+    h3.addEventListener("click", (function(g, h) {
+      return function() {
+        g.classList.toggle("collapsed");
+        h.textContent = h.textContent.replace(/ [▾▸]/, "") + (g.classList.contains("collapsed") ? " ▸" : " ▾");
+      };
+    })(grid, h3));
+
+    ASSET_CATS[cat].forEach(function(asset) {
+      var item = document.createElement("div");
+      item.className = "pal-item";
+      item.draggable = true;
+      item.setAttribute("data-key", asset.key);
+      item.setAttribute("data-src", asset.src);
 
       var img = document.createElement("img");
       img.src = asset.src;
-      // Show at 2x for visibility but cap at 160px
-      img.onload = function() {
-        var scale = 2;
-        var w = this.naturalWidth * scale;
-        var h = this.naturalHeight * scale;
-        if (w > 160) { scale = 160 / this.naturalWidth; w = 160; h = this.naturalHeight * scale; }
-        this.width = w;
-        this.height = h;
-        // Update dims label
-        var dims = card.querySelector('.dims');
-        if (dims) dims.textContent = this.naturalWidth + "x" + this.naturalHeight;
-      };
 
-      var label = document.createElement("div");
-      label.className = "label";
-      label.textContent = asset.key;
+      var name = document.createElement("div");
+      name.className = "name";
+      name.textContent = asset.key;
 
-      var dims = document.createElement("div");
-      dims.className = "dims";
-      dims.textContent = "...";
+      item.appendChild(img);
+      item.appendChild(name);
+      grid.appendChild(item);
 
-      card.appendChild(img);
-      card.appendChild(label);
-      card.appendChild(dims);
-      grid.appendChild(card);
+      // Drag start from palette
+      item.addEventListener("dragstart", function(e) {
+        dragNew = { key: asset.key, src: asset.src };
+        e.dataTransfer.setData("text/plain", asset.key);
+      });
     });
 
-    container.appendChild(grid);
+    sec.appendChild(grid);
+    container.appendChild(sec);
   }
 }
 
-/**
- * Draw the corridor preview canvas using current control settings.
- */
-function drawCorridor() {
-  var canvas = document.getElementById("corridorCanvas");
-  var ctx = canvas.getContext("2d");
+// =====================================================
+//  CANVAS
+// =====================================================
+function resizeCanvas() {
+  canvas.width = sceneW;
+  canvas.height = sceneH;
+  canvas.style.width = sceneW + "px";
+  canvas.style.height = sceneH + "px";
+}
 
-  // Size canvas to its CSS size
-  var rect = canvas.getBoundingClientRect();
-  var W = rect.width;
-  var H = rect.height;
-  canvas.width = W * 2;
-  canvas.height = H * 2;
-  ctx.setTransform(2, 0, 0, 2, 0, 0);
+function draw() {
+  ctx.clearRect(0, 0, sceneW, sceneH);
 
-  // Read control values
-  var zoneId = document.getElementById("ctrl-zone").value;
-  var wallPct = parseInt(document.getElementById("ctrl-wallH").value);
-  var floorPct = parseInt(document.getElementById("ctrl-floorY").value);
-  var tileSize = parseInt(document.getElementById("ctrl-tileSize").value);
-  var decoScale = parseInt(document.getElementById("ctrl-decoScale").value) / 100;
-  var decoAlpha = parseInt(document.getElementById("ctrl-decoAlpha").value) / 100;
-  var spriteScale = parseInt(document.getElementById("ctrl-spriteScale").value) / 100;
+  // Background
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, sceneW, sceneH);
 
-  // Update labels
-  document.getElementById("val-wallH").textContent = wallPct + "%";
-  document.getElementById("val-floorY").textContent = floorPct + "%";
-  document.getElementById("val-tileSize").textContent = tileSize;
-  document.getElementById("val-decoScale").textContent = decoScale.toFixed(1) + "x";
-  document.getElementById("val-decoAlpha").textContent = Math.round(decoAlpha * 100) + "%";
-  document.getElementById("val-spriteScale").textContent = spriteScale.toFixed(1) + "x";
-
-  var zone = ZONES[zoneId];
-  var WALL_H = Math.floor(H * wallPct / 100);
-  var FLOOR_Y = Math.floor(H * floorPct / 100);
-  var FLOOR_H = H - FLOOR_Y;
-  var ACTION_Y = FLOOR_Y - 10;
-
-  // --- SKY/WALL ---
-  var grad = ctx.createLinearGradient(0, 0, 0, FLOOR_Y);
-  grad.addColorStop(0, zone.sky[0]);
-  grad.addColorStop(1, zone.sky[1]);
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, FLOOR_Y);
-
-  // Wall/floor edge line
-  ctx.fillStyle = "rgba(255,255,255,0.06)";
-  ctx.fillRect(0, FLOOR_Y - 2, W, 2);
-
-  // --- TOP DECORATIONS ---
-  if (zone.wallsTop.length > 0) {
-    var spacing = 130;
-    for (var x = 30; x < W; x += spacing) {
-      var key = zone.wallsTop[Math.floor(x / spacing) % zone.wallsTop.length];
-      var img = getImg(key);
-      if (img && img.complete && img.naturalWidth) {
-        var dw = img.naturalWidth * decoScale;
-        var dh = img.naturalHeight * decoScale;
-        var dy = FLOOR_Y - dh;
-        ctx.globalAlpha = decoAlpha;
-        ctx.drawImage(img, x - dw/2, dy, dw, dh);
-        ctx.globalAlpha = 1;
-      }
+  // Grid
+  if (showGrid) {
+    ctx.strokeStyle = "rgba(255,255,255,0.06)";
+    ctx.lineWidth = 1;
+    for (var x = 0; x < sceneW; x += gridSize) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, sceneH); ctx.stroke();
+    }
+    for (var y = 0; y < sceneH; y += gridSize) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(sceneW, y); ctx.stroke();
     }
   }
 
-  // Depth gradient at bottom of wall
-  var depthGrad = ctx.createLinearGradient(0, FLOOR_Y - 40, 0, FLOOR_Y);
-  depthGrad.addColorStop(0, "rgba(0,0,0,0)");
-  depthGrad.addColorStop(1, "rgba(0,0,0,0.3)");
-  ctx.fillStyle = depthGrad;
-  ctx.fillRect(0, FLOOR_Y - 40, W, 40);
+  // Sort by layer then by Y for draw order
+  var sorted = sceneObjs.slice().sort(function(a, b) {
+    if (a.layer !== b.layer) return a.layer - b.layer;
+    return a.y - b.y;
+  });
 
-  // --- FLOOR TILES ---
-  var cols = Math.ceil(W / tileSize) + 1;
-  var rows = Math.ceil(FLOOR_H / tileSize) + 1;
-  for (var row = 0; row < rows; row++) {
-    for (var col = 0; col < cols; col++) {
-      var tIdx = ((row * 7 + col * 13) % zone.tiles.length + zone.tiles.length) % zone.tiles.length;
-      var tImg = getImg(zone.tiles[tIdx]);
-      if (tImg && tImg.complete && tImg.naturalWidth) {
-        ctx.drawImage(tImg, col * tileSize, FLOOR_Y + row * tileSize, tileSize, tileSize);
-      } else {
-        ctx.fillStyle = (row+col)%2===0 ? "#2a2a3e" : "#22223a";
-        ctx.fillRect(col * tileSize, FLOOR_Y + row * tileSize, tileSize, tileSize);
-      }
-    }
-  }
+  // Draw objects
+  sorted.forEach(function(obj) {
+    var img = images[obj.key];
+    if (!img || !img.complete || !img.naturalWidth) return;
 
-  // Floor shadow
-  var fGrad = ctx.createLinearGradient(0, FLOOR_Y, 0, FLOOR_Y + 25);
-  fGrad.addColorStop(0, "rgba(0,0,0,0.35)");
-  fGrad.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = fGrad;
-  ctx.fillRect(0, FLOOR_Y, W, 25);
+    var w = img.naturalWidth * obj.scale;
+    var h = img.naturalHeight * obj.scale;
 
-  // --- BOTTOM DECORATIONS ---
-  if (zone.wallsBottom.length > 0) {
-    var bSpacing = 160;
-    for (var bx = 80; bx < W; bx += bSpacing) {
-      var bKey = zone.wallsBottom[Math.floor(bx / bSpacing) % zone.wallsBottom.length];
-      var bImg = getImg(bKey);
-      if (bImg && bImg.complete && bImg.naturalWidth) {
-        var bdw = bImg.naturalWidth * decoScale;
-        var bdh = bImg.naturalHeight * decoScale;
-        var bdy = FLOOR_Y - bdh * 0.4;
-        ctx.globalAlpha = 0.5;
-        ctx.drawImage(bImg, bx - bdw/2, bdy, bdw, bdh);
-        ctx.globalAlpha = 1;
-      }
-    }
-  }
-
-  // --- HERO SPRITE ---
-  var heroImg = getImg("knight");
-  if (heroImg && heroImg.complete && heroImg.naturalWidth) {
-    var hsw = 64 * spriteScale;
-    var hsh = 96 * spriteScale;
-    var hx = W * 0.25 - hsw/2;
-    var hy = ACTION_Y - hsh;
-
-    // Shadow
-    ctx.fillStyle = "rgba(0,0,0,0.4)";
-    ctx.beginPath();
-    ctx.ellipse(W * 0.25, ACTION_Y + 2, hsw * 0.28, 7, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.drawImage(heroImg, hx, hy, hsw, hsh);
-
-    // Label
-    ctx.font = "bold 11px 'Courier New'";
-    ctx.textAlign = "center";
-    ctx.fillStyle = "#ffd700";
-    ctx.shadowColor = "#000"; ctx.shadowBlur = 3;
-    ctx.fillText("Lv1 Knight", W * 0.25, ACTION_Y + 18);
-    ctx.shadowBlur = 0;
-  }
-
-  // --- ENEMY SPRITE ---
-  var enemies = { forest: "goblin", cavern: "orc", castle: "minotaur", cemetery: "wraith", hell: "raging_demon", cosmic: "beholder" };
-  var eKey = enemies[zoneId] || "slime";
-  var eImg = getImg(eKey);
-  if (eImg && eImg.complete && eImg.naturalWidth) {
-    var esw = 64 * spriteScale;
-    var esh = 96 * spriteScale;
-    var ex = W * 0.68;
-
-    // Shadow
-    ctx.fillStyle = "rgba(0,0,0,0.4)";
-    ctx.beginPath();
-    ctx.ellipse(ex, ACTION_Y + 2, esw * 0.28, 7, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Flip enemy
     ctx.save();
-    ctx.translate(ex - esw/2 + esw, ACTION_Y - esh);
-    ctx.scale(-1, 1);
-    ctx.drawImage(eImg, 0, 0, esw, esh);
+    ctx.globalAlpha = obj.alpha;
+
+    if (obj.flipX) {
+      ctx.translate(obj.x + w, obj.y);
+      ctx.scale(-1, 1);
+      ctx.drawImage(img, 0, 0, w, h);
+    } else {
+      ctx.drawImage(img, obj.x, obj.y, w, h);
+    }
+
     ctx.restore();
 
-    // HP bar
-    var barW = esw * 0.75;
-    ctx.fillStyle = "#222";
-    ctx.fillRect(ex - barW/2 - 1, ACTION_Y - esh - 23, barW + 2, 10);
-    ctx.fillStyle = "rgb(40,180,40)";
-    ctx.fillRect(ex - barW/2, ACTION_Y - esh - 22, barW, 8);
-    ctx.strokeStyle = "#555";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(ex - barW/2, ACTION_Y - esh - 22, barW, 8);
-
-    // Label
-    ctx.font = "bold 11px 'Courier New'";
-    ctx.textAlign = "center";
-    ctx.fillStyle = "#ddd";
-    ctx.shadowColor = "#000"; ctx.shadowBlur = 3;
-    ctx.fillText(eKey.replace(/_/g," ") + " Lv3", ex, ACTION_Y - esh - 30);
-    ctx.shadowBlur = 0;
-  }
-
-  // --- GUIDE LINES (to show layout zones) ---
-  ctx.setLineDash([4, 4]);
-  ctx.strokeStyle = "rgba(255,255,0,0.2)";
-  ctx.lineWidth = 1;
-
-  // Floor Y line
-  ctx.beginPath();
-  ctx.moveTo(0, FLOOR_Y); ctx.lineTo(W, FLOOR_Y);
-  ctx.stroke();
-
-  // Action Y line
-  ctx.beginPath();
-  ctx.moveTo(0, ACTION_Y); ctx.lineTo(W, ACTION_Y);
-  ctx.stroke();
-
-  ctx.setLineDash([]);
-
-  // Labels for guide lines
-  ctx.font = "9px 'Courier New'";
-  ctx.textAlign = "left";
-  ctx.fillStyle = "rgba(255,255,0,0.4)";
-  ctx.fillText("FLOOR_Y=" + floorPct + "%", 4, FLOOR_Y - 4);
-  ctx.fillText("ACTION_Y", 4, ACTION_Y - 4);
+    // Selection highlight
+    if (obj.id === selectedId) {
+      ctx.strokeStyle = "#ffd700";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 3]);
+      ctx.strokeRect(obj.x - 1, obj.y - 1, w + 2, h + 2);
+      ctx.setLineDash([]);
+    }
+  });
 }
 
-// --- INIT ---
-buildAssetSections();
+// =====================================================
+//  MOUSE EVENTS
+// =====================================================
+function canvasPos(e) {
+  var r = canvas.getBoundingClientRect();
+  return { x: e.clientX - r.left, y: e.clientY - r.top };
+}
 
-// Preload all images then draw
-var allKeys = Object.keys(srcLookup);
-var loaded = 0;
-allKeys.forEach(function(key) {
-  var img = getImg(key);
-  img.onload = function() {
-    loaded++;
-    if (loaded >= allKeys.length) drawCorridor();
+function hitTest(mx, my) {
+  // Test from front to back (highest layer first, then highest Y)
+  var sorted = sceneObjs.slice().sort(function(a, b) {
+    if (b.layer !== a.layer) return b.layer - a.layer;
+    return b.y - a.y;
+  });
+  for (var i = 0; i < sorted.length; i++) {
+    var obj = sorted[i];
+    var img = images[obj.key];
+    if (!img || !img.naturalWidth) continue;
+    var w = img.naturalWidth * obj.scale;
+    var h = img.naturalHeight * obj.scale;
+    if (mx >= obj.x && mx <= obj.x + w && my >= obj.y && my <= obj.y + h) {
+      return obj;
+    }
+  }
+  return null;
+}
+
+function onMouseDown(e) {
+  var pos = canvasPos(e);
+  var hit = hitTest(pos.x, pos.y);
+
+  if (hit) {
+    selectedId = hit.id;
+    dragging = { id: hit.id, offsetX: pos.x - hit.x, offsetY: pos.y - hit.y };
+    canvas.style.cursor = "grabbing";
+  } else {
+    selectedId = null;
+  }
+  updateProps();
+  updateObjList();
+  draw();
+}
+
+function onMouseMove(e) {
+  if (!dragging) return;
+  var pos = canvasPos(e);
+  var obj = sceneObjs.find(function(o) { return o.id === dragging.id; });
+  if (!obj) return;
+
+  var nx = pos.x - dragging.offsetX;
+  var ny = pos.y - dragging.offsetY;
+
+  if (snapToGrid) {
+    nx = Math.round(nx / gridSize) * gridSize;
+    ny = Math.round(ny / gridSize) * gridSize;
+  }
+
+  obj.x = Math.round(nx);
+  obj.y = Math.round(ny);
+  updateProps();
+  draw();
+}
+
+function onMouseUp(e) {
+  if (dragging) {
+    dragging = null;
+    canvas.style.cursor = "crosshair";
+  }
+}
+
+function onDblClick(e) {
+  // Double-click brings object to front
+  if (!selectedId) return;
+  var obj = sceneObjs.find(function(o) { return o.id === selectedId; });
+  if (obj) {
+    obj.layer = 2;
+    updateProps(); updateObjList(); draw();
+  }
+}
+
+function onDrop(e) {
+  e.preventDefault();
+  if (!dragNew) return;
+
+  var pos = canvasPos(e);
+  var nx = pos.x;
+  var ny = pos.y;
+
+  if (snapToGrid) {
+    nx = Math.round(nx / gridSize) * gridSize;
+    ny = Math.round(ny / gridSize) * gridSize;
+  }
+
+  // Create new scene object at the drop position
+  var obj = {
+    id: nextId++,
+    key: dragNew.key,
+    src: dragNew.src,
+    x: Math.round(nx),
+    y: Math.round(ny),
+    scale: 1.5,
+    alpha: 1,
+    flipX: false,
+    layer: 1
   };
-  img.onerror = function() {
-    loaded++;
-    if (loaded >= allKeys.length) drawCorridor();
+
+  sceneObjs.push(obj);
+  selectedId = obj.id;
+  dragNew = null;
+
+  updateProps();
+  updateObjList();
+  draw();
+}
+
+// =====================================================
+//  KEYBOARD
+// =====================================================
+function onKeyDown(e) {
+  if (!selectedId) return;
+  // Don't capture if typing in an input
+  if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA" || e.target.tagName === "SELECT") return;
+
+  var obj = sceneObjs.find(function(o) { return o.id === selectedId; });
+  if (!obj) return;
+
+  var step = e.shiftKey ? 10 : 1;
+
+  switch (e.key) {
+    case "ArrowLeft":  obj.x -= step; e.preventDefault(); break;
+    case "ArrowRight": obj.x += step; e.preventDefault(); break;
+    case "ArrowUp":    obj.y -= step; e.preventDefault(); break;
+    case "ArrowDown":  obj.y += step; e.preventDefault(); break;
+    case "Delete":
+    case "Backspace":  deleteSelected(); e.preventDefault(); return;
+    case "d":
+      if (e.ctrlKey) { duplicateSelected(); e.preventDefault(); }
+      return;
+    default: return;
+  }
+
+  updateProps();
+  draw();
+}
+
+// =====================================================
+//  PROPERTIES PANEL
+// =====================================================
+function updateProps() {
+  var none = document.getElementById("prop-none");
+  var fields = document.getElementById("prop-fields");
+
+  if (!selectedId) {
+    none.style.display = "block";
+    fields.style.display = "none";
+    return;
+  }
+
+  var obj = sceneObjs.find(function(o) { return o.id === selectedId; });
+  if (!obj) {
+    none.style.display = "block";
+    fields.style.display = "none";
+    return;
+  }
+
+  none.style.display = "none";
+  fields.style.display = "block";
+
+  document.getElementById("prop-x").value = obj.x;
+  document.getElementById("prop-y").value = obj.y;
+  document.getElementById("prop-scale").value = obj.scale;
+  document.getElementById("prop-scale-val").textContent = obj.scale.toFixed(1);
+  document.getElementById("prop-alpha").value = obj.alpha;
+  document.getElementById("prop-alpha-val").textContent = obj.alpha.toFixed(2);
+  document.getElementById("prop-flipx").checked = obj.flipX;
+  document.getElementById("prop-layer").value = obj.layer;
+}
+
+function onPropChange() {
+  if (!selectedId) return;
+  var obj = sceneObjs.find(function(o) { return o.id === selectedId; });
+  if (!obj) return;
+
+  obj.x = parseInt(document.getElementById("prop-x").value) || 0;
+  obj.y = parseInt(document.getElementById("prop-y").value) || 0;
+  obj.scale = parseFloat(document.getElementById("prop-scale").value) || 1;
+  obj.alpha = parseFloat(document.getElementById("prop-alpha").value) || 1;
+  obj.flipX = document.getElementById("prop-flipx").checked;
+  obj.layer = parseInt(document.getElementById("prop-layer").value);
+
+  draw();
+}
+
+function duplicateSelected() {
+  if (!selectedId) return;
+  var obj = sceneObjs.find(function(o) { return o.id === selectedId; });
+  if (!obj) return;
+
+  var dup = Object.assign({}, obj);
+  dup.id = nextId++;
+  dup.x += 20;
+  dup.y += 20;
+  sceneObjs.push(dup);
+  selectedId = dup.id;
+  updateProps(); updateObjList(); draw();
+}
+
+function deleteSelected() {
+  if (!selectedId) return;
+  sceneObjs = sceneObjs.filter(function(o) { return o.id !== selectedId; });
+  selectedId = null;
+  updateProps(); updateObjList(); draw();
+}
+
+// =====================================================
+//  OBJECT LIST
+// =====================================================
+function updateObjList() {
+  var list = document.getElementById("obj-list");
+  list.innerHTML = "";
+
+  // Sort by layer for the list
+  var sorted = sceneObjs.slice().sort(function(a, b) { return a.layer - b.layer; });
+
+  sorted.forEach(function(obj) {
+    var item = document.createElement("div");
+    item.className = "layer-item" + (obj.id === selectedId ? " selected" : "");
+
+    var layerNames = ["BK", "MD", "FR"];
+    var info = document.createElement("span");
+    info.textContent = "[" + layerNames[obj.layer] + "] " + obj.key + " (" + obj.x + "," + obj.y + ")";
+
+    var del = document.createElement("span");
+    del.className = "del-btn";
+    del.textContent = "x";
+    del.addEventListener("click", function(e) {
+      e.stopPropagation();
+      sceneObjs = sceneObjs.filter(function(o) { return o.id !== obj.id; });
+      if (selectedId === obj.id) selectedId = null;
+      updateProps(); updateObjList(); draw();
+    });
+
+    item.appendChild(info);
+    item.appendChild(del);
+
+    item.addEventListener("click", function() {
+      selectedId = obj.id;
+      updateProps(); updateObjList(); draw();
+    });
+
+    list.appendChild(item);
+  });
+}
+
+// =====================================================
+//  EXPORT / IMPORT
+// =====================================================
+function exportJSON() {
+  var data = {
+    sceneW: sceneW,
+    sceneH: sceneH,
+    bgColor: bgColor,
+    objects: sceneObjs.map(function(o) {
+      return { key: o.key, x: o.x, y: o.y, scale: o.scale, alpha: o.alpha, flipX: o.flipX, layer: o.layer };
+    })
   };
-});
+  var json = JSON.stringify(data, null, 2);
+  document.getElementById("export-json").value = json;
 
-// Redraw when controls change
-document.querySelectorAll(".controls select, .controls input").forEach(function(el) {
-  el.addEventListener("input", drawCorridor);
-});
+  // Also copy to clipboard
+  navigator.clipboard.writeText(json).catch(function() {});
+}
 
-// Also draw after a short delay in case images load fast
-setTimeout(drawCorridor, 500);
-setTimeout(drawCorridor, 1500);
+function importJSON() {
+  var json = prompt("Paste scene JSON:");
+  if (!json) return;
+  try {
+    var data = JSON.parse(json);
+    if (data.sceneW) { sceneW = data.sceneW; document.getElementById("tb-width").value = sceneW; }
+    if (data.sceneH) { sceneH = data.sceneH; document.getElementById("tb-height").value = sceneH; }
+    if (data.bgColor) { bgColor = data.bgColor; document.getElementById("tb-bgcolor").value = bgColor; }
+    resizeCanvas();
+
+    sceneObjs = [];
+    if (data.objects) {
+      data.objects.forEach(function(o) {
+        sceneObjs.push({
+          id: nextId++,
+          key: o.key,
+          src: srcMap[o.key] || "",
+          x: o.x, y: o.y,
+          scale: o.scale || 1,
+          alpha: o.alpha !== undefined ? o.alpha : 1,
+          flipX: o.flipX || false,
+          layer: o.layer || 1
+        });
+      });
+    }
+    selectedId = null;
+    updateProps(); updateObjList(); draw();
+  } catch(e) {
+    alert("Invalid JSON: " + e.message);
+  }
+}
+
+// Auto-save to localStorage
+setInterval(function() {
+  try {
+    var data = {
+      sceneW: sceneW, sceneH: sceneH, bgColor: bgColor,
+      objects: sceneObjs.map(function(o) {
+        return { key: o.key, x: o.x, y: o.y, scale: o.scale, alpha: o.alpha, flipX: o.flipX, layer: o.layer };
+      })
+    };
+    localStorage.setItem("is3_scene_editor", JSON.stringify(data));
+  } catch(e) {}
+}, 3000);
+
+// Load from localStorage on boot
+window.addEventListener("DOMContentLoaded", function() {
+  try {
+    var saved = localStorage.getItem("is3_scene_editor");
+    if (saved) {
+      var data = JSON.parse(saved);
+      if (data.sceneW) { sceneW = data.sceneW; document.getElementById("tb-width").value = sceneW; }
+      if (data.sceneH) { sceneH = data.sceneH; document.getElementById("tb-height").value = sceneH; }
+      if (data.bgColor) { bgColor = data.bgColor; document.getElementById("tb-bgcolor").value = bgColor; }
+      resizeCanvas();
+      if (data.objects) {
+        data.objects.forEach(function(o) {
+          sceneObjs.push({
+            id: nextId++, key: o.key, src: srcMap[o.key] || "",
+            x: o.x, y: o.y, scale: o.scale || 1,
+            alpha: o.alpha !== undefined ? o.alpha : 1,
+            flipX: o.flipX || false, layer: o.layer || 1
+          });
+        });
+      }
+      updateObjList();
+      setTimeout(draw, 500);
+    }
+  } catch(e) {}
+});
 </script>
 
 </body>
