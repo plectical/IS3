@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>IS3</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Main game canvas - everything draws here -->
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- UI overlay for menus/HUD that sit on top of canvas -->
+  <div id="ui-overlay">
+    <!-- Top bar: player level, HP, gold -->
+    <div id="hud-top">
+      <div id="hud-hero-info">
+        <span id="hud-level">Lv 1</span>
+        <div id="hud-hp-bar">
+          <div id="hud-hp-fill"></div>
+          <span id="hud-hp-text">100/100</span>
+        </div>
+        <div id="hud-xp-bar">
+          <div id="hud-xp-fill"></div>
+        </div>
+      </div>
+      <div id="hud-gold">
+        <span id="hud-gold-text">0g</span>
+      </div>
+    </div>
+
+    <!-- Bottom bar: zone info + auto-fight toggle -->
+    <div id="hud-bottom">
+      <div id="zone-info">
+        <span id="zone-name">Forest</span>
+        <span id="zone-level">Zone 1</span>
+      </div>
+      <button id="btn-fight">FIGHT</button>
+    </div>
+
+    <!-- Loot popup (shows briefly when items drop) -->
+    <div id="loot-popup" class="hidden"></div>
+  </div>
+
+  <!-- Load game scripts in order -->
+  <script src="js/assetLoader.js"></script>
+  <script src="js/gameData.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/enemy.js"></script>
+  <script src="js/combat.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>

@@ -1,0 +1,212 @@
+/* ===== RESET & BASE ===== */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Fill the whole screen, black background behind the canvas */
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #111;
+  font-family: 'Courier New', monospace;
+  color: #fff;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ===== CANVAS ===== */
+/* Game canvas stretches to fill the viewport */
+#gameCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated; /* keep pixel art crisp */
+}
+
+/* ===== UI OVERLAY ===== */
+/* Sits on top of canvas, doesn't block canvas clicks except on UI elements */
+#ui-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none; /* let clicks pass through to canvas */
+  z-index: 10;
+}
+
+/* Re-enable pointer events on interactive UI children */
+#ui-overlay button,
+#ui-overlay .clickable {
+  pointer-events: auto;
+}
+
+/* ===== TOP HUD ===== */
+#hud-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 10px 14px;
+  pointer-events: none;
+}
+
+#hud-hero-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+#hud-level {
+  font-size: 14px;
+  font-weight: bold;
+  color: #ffd700;
+  text-shadow: 1px 1px 2px #000;
+}
+
+/* HP bar container */
+#hud-hp-bar {
+  position: relative;
+  width: 180px;
+  height: 16px;
+  background: #333;
+  border: 1px solid #555;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+/* HP fill - green gradient */
+#hud-hp-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(to bottom, #4c4, #282);
+  transition: width 0.3s ease;
+}
+
+/* HP text centered on the bar */
+#hud-hp-text {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  text-shadow: 1px 1px 1px #000;
+}
+
+/* XP bar - thin bar under HP */
+#hud-xp-bar {
+  width: 180px;
+  height: 6px;
+  background: #222;
+  border: 1px solid #444;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+#hud-xp-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(to bottom, #88f, #44a);
+  transition: width 0.3s ease;
+}
+
+/* Gold display */
+#hud-gold {
+  pointer-events: none;
+}
+
+#hud-gold-text {
+  font-size: 14px;
+  color: #ffd700;
+  text-shadow: 1px 1px 2px #000;
+}
+
+/* ===== BOTTOM HUD ===== */
+#hud-bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  pointer-events: none;
+}
+
+#zone-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+#zone-name {
+  font-size: 14px;
+  font-weight: bold;
+  color: #8f8;
+  text-shadow: 1px 1px 2px #000;
+}
+
+#zone-level {
+  font-size: 11px;
+  color: #aaa;
+  text-shadow: 1px 1px 2px #000;
+}
+
+/* Fight button */
+#btn-fight {
+  pointer-events: auto;
+  background: linear-gradient(to bottom, #d44, #911);
+  border: 2px solid #f66;
+  color: #fff;
+  font-family: 'Courier New', monospace;
+  font-size: 16px;
+  font-weight: bold;
+  padding: 12px 28px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-shadow: 1px 1px 2px #000;
+  transition: background 0.15s;
+}
+
+#btn-fight:active {
+  background: linear-gradient(to bottom, #f66, #c33);
+}
+
+/* Auto-fight active state */
+#btn-fight.auto-active {
+  background: linear-gradient(to bottom, #4a4, #272);
+  border-color: #6d6;
+}
+
+/* ===== LOOT POPUP ===== */
+#loot-popup {
+  position: absolute;
+  bottom: 70px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid #ffd700;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 13px;
+  color: #ffd700;
+  text-shadow: 1px 1px 2px #000;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+
+/* Hidden class for toggling elements */
+.hidden {
+  opacity: 0;
+  pointer-events: none !important;
+}
+
+/* ===== DAMAGE NUMBERS (rendered on canvas, but styled class for reference) ===== */
+/* Damage floaters are drawn directly on the canvas in renderer.js */

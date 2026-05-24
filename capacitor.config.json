@@ -1,0 +1,8 @@
+{
+  "appId": "com.is3.autofight.rpg",
+  "appName": "IS3",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}
